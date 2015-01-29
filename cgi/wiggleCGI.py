@@ -6,7 +6,7 @@ import cgitb
 import json
 import sqlite3
 import re
-import wiggletools.wiggleDB
+import wiggledb.wiggleDB
 
 DEBUG = False
 CONFIG_FILE = '/data/wiggletools/wiggletools.conf'

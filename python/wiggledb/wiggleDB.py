@@ -10,8 +10,8 @@ import os
 import os.path
 import json
 
-import parallelWiggleTools
-import multiJob
+import wiggletools.parallelWiggleTools
+import wiggletools.multiJob
 
 verbose = False
 

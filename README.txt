@@ -1,13 +1,13 @@
 Install aws CLI, 
 	create config file with credentials, readable by all users
 
-Make package (see README.md)
-Copy bin/* to /usr/local/lib, ensure 755 permissions
+Make and install WiggleTools package (see README.md), ensure 755 permissions
 Copy python/wiggletools directory to /usr/local/lib/python-2.7/dist-packages, ensure 755 permissions
 
 Mount data drive EBS with data files
 Prepare tab delimited file. 
 	First five columns must be:	location	name	type	annotation	assembly
+	All other columns are your business
 Prepare tab delimited file with chromosome lengths
 	ensure 644 permissions
 Create database
@@ -28,7 +28,8 @@ Copy cgi/* to your Apache CGI directory,
 
 Copy gui/* to your Apache web directory
 	ensure 644 permissions
+
 Create attributes.json page:
 	wiggleDB.py --database /path/to/database.sqlite3 --attributes > attributes.json 
 		(must be accessible via http)
-	check URLs at the top of the file
+	check URLs at the top of the Javascript file

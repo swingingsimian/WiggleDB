@@ -6,7 +6,7 @@ import os
 import os.path
 import json
 
-import wiggletools.wiggleDB
+import wiggleDB.wiggleDB
 import wiggletools.multiJob 
 import wiggletools.wigglePlots
 
