@@ -1,4 +1,4 @@
-Install aws CLI, 
+Install aws CLI
 	create config file with credentials, readable by all users
 
 Make and install WiggleTools package (see README.md), ensure 755 permissions
@@ -17,7 +17,7 @@ Create database
 
 Create/choose log directory, ensure 777 permissions
 Create/choose tmp directory, ensure 777 permissions
-Create config file (see example in WiggleTools/python/wiggletools/wiggletools.conf)
+Create config file (see example in conf/wiggletools.conf)
 	Edit config file
 	Ensure 644 permissions
 
