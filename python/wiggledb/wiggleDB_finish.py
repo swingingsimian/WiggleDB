@@ -31,7 +31,7 @@ class Struct(object):
 def get_options():
 	assert len(sys.argv) == 2
 	options = Struct(**(json.load(open(sys.argv[-1]))))
-	return options, wiggletools.wiggleDB.read_config_file(options.config)
+	return options, wiggleDB.wiggleDB.read_config_file(options.config)
 
 def copy_to_longterm(data, config):
 	if 's3_bucket' in config:
@@ -68,14 +68,14 @@ def main():
 
 		# Signing off
 		if empty:
-			wiggletools.wiggleDB.report_empty_to_user(options, config)
-			wiggletools.wiggleDB.mark_job_status(options.db, options.jobID, 'EMPTY')
+			wiggleDB.wiggleDB.report_empty_to_user(options, config)
+			wiggleDB.wiggleDB.mark_job_status(options.db, options.jobID, 'EMPTY')
 		else:
 			copy_to_longterm(options.data, config)
 			if os.path.exists(options.data + ".png"):
 				copy_to_longterm(data + ".png", config)
-			wiggletools.wiggleDB.report_to_user(options, config)
-			wiggletools.wiggleDB.mark_job_status(options.db, options.jobID, 'DONE')
+			wiggleDB.wiggleDB.report_to_user(options, config)
+			wiggleDB.wiggleDB.mark_job_status(options.db, options.jobID, 'DONE')
 
 		# Housekeeping
 		if options.temps is not None:
