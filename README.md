@@ -1,6 +1,8 @@
 Installing WiggleDB
 ===================
 
+WiggleDB is a server application to run WiggleTools commands remotely.
+
 Install WiggleTools
 -------------------
 
@@ -22,15 +24,21 @@ chmod 755 python/wiggleDB/* cgi/*
 cp -r python/wiggletools/ /usr/local/lib/python-2.7/dist-packages
 ```
 
-Prepare data
-------------
+Prepare the data
+----------------
 
 1. Prepare a tab-delimited file, say datasets.tsv. The first five columns headers must be:	
 
 	```
 	location	name	type	annotation	assembly
 	```
-	All other columns are your business. You may want to select meaningful headers, and remove columns with too many values.
+	Their content should be:
+	- location: absolute path to the file
+	- name: string (useful for annotations)
+	- type: regions or signal
+	- annotation: TRUE or FALSE
+	- assembly: assembly name (e.g. GRCh38)
+	- all other columns are your business. Try to select meaningful headers, and remove columns with too many values.
 
 2. Prepare a tab-delimited file, say chromosome.lengths, with chromosome lengths and ensure it has 644 permissions, e.g.:
 
@@ -61,17 +69,18 @@ Prepare data
 
 5. Move the SQLite3 file to a location visible to all users.
 
-Install aws CLI
+Install AWS CLI
 ---------------
 
 If you wish to push final results to S3 storage, create a config file with credentials, readable by all users.
 
-Prepare server
---------------
+Prepare the server
+------------------
 
 1. Create/choose log directory, ensure 777 permissions
 2. Create/choose tmp directory, ensure 777 permissions
-3. Create your own config file (see example in conf/wiggletools.conf) (Ensure 644 permissions)
-4. Copy the content of cgi/ to your Apache CGI directory, and edit the top of CGI file, so that it points to your config file. 
-5. Test by running wiggleCGI.py on the command line, without parameters
-6. Copy the content of gui/ to your Apache web directory, and check the URLs at the top of the Javascript file
+3. Create your own config file (see example in conf/wiggletools.conf) (Ensure 644 permissions, move to a visible location)
+4. Copy the content of cgi/ to your Apache CGI directory, and edit the top of the CGI file, so that it points to your config file. 
+	- Test by running wiggleCGI.py on the command line, without parameters
+6. Copy the content of gui/ to your Apache web directory
+	- check the URLs at the top of the Javascript file
