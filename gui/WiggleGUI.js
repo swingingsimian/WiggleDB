@@ -400,6 +400,28 @@ function get_result() {
   $.getJSON(CGI_URL + "result=" + $('#result_box').val()).done(report_result).fail(catch_JSON_error);
 }
 
+// Upload user dataset
+function upload_dataset() {
+  $.getJSON(CGI_URL + "uploadUrl=" + $('#uploadURL').val() + "&description=" + $("#uploadDescription").val()).done(report_upload).fail(catch_JSON_error);
+}
+
+function report_upload(data) {
+  if (data["status"] == "UPLOADED") {
+      var modal = $('#Success_upload_modal').clone();
+      modal.modal();
+  } else if ("format" in data) {
+      var modal = $('#Malformed_upload_modal').clone();
+      modal.find('#url').text(data['url']);
+      modal.find('#format').text(data['format']);
+      modal.modal();
+  } else {
+      var modal = $('#Failed_upload_modal').clone();
+      modal.find('#url').text(data['url']);
+      modal.find('#format').text(data['format']);
+      modal.modal();
+  }
+}
+
 // Send job to server 
 function submit_query(query) {
   //$.getJSON(CGI_URL + "assembly=" + assembly + "&" + query).done(report_result).fail(catch_JSON_error);

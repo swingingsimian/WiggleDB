@@ -67,6 +67,7 @@ def get_options():
 	parser.add_argument('--config','-c',dest='config',help='Configuration file')
 	parser.add_argument('--annotations','-n',dest='annotations',help='Print list of annotation names', action='store_true')
 	parser.add_argument('--jobs','-j',dest='jobs',help='Print list of jobs',nargs='*')
+	parser.add_argument('--upload','-u',dest='upload',help='Upload dataset')
 
 	options = parser.parse_args()
 	if all(X is None for X in [options.load, options.clean, options.result, options.datasets, options.clear_cache]) and not options.cache and not options.attributes and not options.annotations:
@@ -99,6 +100,7 @@ def create_database(cursor, filename):
 		print 'Creating database'
 	create_cache(cursor)
 	create_dataset_table(cursor, filename)
+	create_user_dataset_table(cursor)
 
 def create_cache(cursor):
 	cursor.execute('''
@@ -133,6 +135,16 @@ def create_dataset_table(cursor, filename):
 	file.close()
 
 
+def create_user_dataset_table(cursor):
+	header = '''
+			CREATE TABLE IF NOT EXISTS 
+			user_datasets 
+			(
+ 			name varchar(100) UNIQUE,
+			location varchar(1000)
+			)
+		 '''
+	cursor.execute(header)
 
 ###########################################
 ## Garbage cleaning 
@@ -322,9 +334,52 @@ def request_compute(conn, cursor, options, config):
 		return {'location':prior_result, 'status':'DONE'}
 
 ###########################################
+## Upload file
 ###########################################
 
+def wget_dataset(url, dir):
+	fh, destination = tempfile.mkstemp(suffix=url.split('.')[-1],dir=dir)
+	run("wget %s -O %s" % (url, destination))
+	return destination
+
+def check_file_integrity(file):
+	suffix = file.split('.')[-1]
+	if suffix == 'bed' or suffix == 'txt':
+		try:
+			elems = []
+			for line in open(file):
+				items = line.split('\t')
+				elems.append(items[0], int(items[1]), int(items[2]))
+			fh = open(file, "w")
+			for elem in sorted(elems):
+				fh.write("\t".join(elems) + "\n")
+			fh.close()
+		except:
+			return {'status':'MALFORMED_INPUT', 'format':'flatfile'}
+	elif suffix == 'bb':
+		try:
+			run("bigBedInfo %s" % (file))
+		except:
+			return {'status':'MALFORMED_INPUT', 'format':'bigBed'}
 		
+	return None
+
+def register_user_dataset(cursor, file, description): 
+	cursor.execute('INSERT INTO user_datasets VALUES ("%s","%s")' % (file, description))
+
+def upload_dataset(cursor, dir, url, description):
+	try:
+		file = wget_dataset(url, dir);
+		if file is None:
+			raise
+		ret = check_file_integrity(file)
+		if ret is not None:
+			return ret
+		register_user_dataset(cursor, file, description)
+		return {'status':'UPLOADED'}
+	except:
+		raise
+		return {'status':'UPLOAD_FAILED','url':url}
 
 ###########################################
 ## Main
@@ -354,6 +409,8 @@ def main():
 		print "\n".join("\t".join(map(str, X)) for X in get_datasets(cursor))
 	elif options.annotations:
 		print "\n".join("\t".join(map(str, X)) for X in get_annotations(cursor))
+	elif options.upload is not None:
+		print json.dumps(upload_dataset(cursor, options.working_directory, options.upload, options.description))
 	else:
 		if options.a is not None:
 			res = dict()

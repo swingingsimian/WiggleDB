@@ -69,6 +69,9 @@ def main():
 		elif 'annotations' in form:
 			print json.dumps({"annotations": [X[1] for X in wiggletools.wiggleDB.get_annotations(cursor)]})
 
+		elif 'uploadUrl' in form:
+			print json.dumps(wiggletools.wiggleDB.upload_dataset(cursor, config['working_directory'], form['uploadUrl'].value, form['description'].value))
+
 		elif 'wa' in form:
 			options = WiggleDBOptions()
 			options.wa = form['wa'].value
