@@ -156,8 +156,9 @@ function add_annotations_2(data) {
 }
 
 function add_annotations() {
-  $.getJSON(CGI_URL + "assembly=" + assembly + "&annotations=1").done(add_annotations_2).fail(catch_JSON_error);
+  //$.getJSON(CGI_URL + "assembly=" + assembly + "&annotations=1").done(add_annotations_2).fail(catch_JSON_error);
   fill_select($('#reference_reduction'), reduction_opts['regions']);
+  $.getJSON(CGI_URL + "annotations=1").done(add_annotations_2).fail(catch_JSON_error);
 }
 
 //////////////////////////////////////////
@@ -210,7 +211,8 @@ function panel_reduction(panel) {
 //////////////////////////////////////////
 
 function update_panel_count(panel) {
-  url = CGI_URL + "count=true&assembly=" + assembly + "&" + panel_query(panel);
+  //url = CGI_URL + "count=true&assembly=" + assembly + "&" + panel_query(panel);
+  url = CGI_URL + "count=true&" + panel_query(panel);
   $.getJSON(url).done(
    function(data, textStatus, jqXHR) {
      panel.find("#count").text("(" + data["count"] + " elements selected)");
@@ -400,7 +402,8 @@ function get_result() {
 
 // Send job to server 
 function submit_query(query) {
-  $.getJSON(CGI_URL + "assembly=" + assembly + "&" + query).done(report_result).fail(catch_JSON_error);
+  //$.getJSON(CGI_URL + "assembly=" + assembly + "&" + query).done(report_result).fail(catch_JSON_error);
+  $.getJSON(CGI_URL + query).done(report_result).fail(catch_JSON_error);
 }
 
 // Get list of emails separated by ampersands

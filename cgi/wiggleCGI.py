@@ -31,7 +31,6 @@ cgitb.enable(logdir=config['logdir'])
 class WiggleDBOptions(object):
 	def __init__(self):
 		self.conn = None
-		self.assembly = None
 		self.wa  = None
 		self.working_directory = None
 		self.s3 = None
@@ -64,17 +63,14 @@ def main():
 		cursor = conn.cursor()
 		if "count" in form:
 			params = dict((re.sub("^._", "", X), form.getlist(X)) for X in form if X != "count")
-			count = len(wiggletools.wiggleDB.get_dataset_locations(cursor, params, assembly))
+			count = len(wiggletools.wiggleDB.get_dataset_locations(cursor, params))
 			print json.dumps({'query':params,'count':count})
 
 		elif 'annotations' in form:
-			assembly = form['assembly'].value
-			print json.dumps({"annotations": [X[1] for X in wiggletools.wiggleDB.get_annotations(cursor, assembly)]})
+			print json.dumps({"annotations": [X[1] for X in wiggletools.wiggleDB.get_annotations(cursor)]})
 
 		elif 'wa' in form:
 			options = WiggleDBOptions()
-			options.conn = conn
-			options.assembly = form['assembly'].value
 			options.wa = form['wa'].value
 			options.working_directory = config['working_directory']
 			options.s3 = config['s3_bucket']

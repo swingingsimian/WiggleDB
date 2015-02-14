@@ -54,9 +54,7 @@ def get_options():
 	parser.add_argument('--wiggletools','-w',dest='fun_merge',help='Wiggletools command')
 	parser.add_argument('--emails','-e',dest='emails',help='List of e-mail addresses for reminder',nargs='*')
 
-	parser.add_argument('--load','-l',dest='load',help='Datasets to load in database')
-	parser.add_argument('--load_assembly','-la',dest='load_assembly',help='Assembly name and path to file with chromosome lengths',nargs=2)
-	parser.add_argument('--assembly','-y',dest='assembly',help='File with chromosome lengths')
+	parser.add_argument('--load',dest='load',help='Datasets to load in database')
 	parser.add_argument('--clean',dest='clean',help='Delete cached datasets older than X days', type=int)
 	parser.add_argument('--cache',dest='cache',help='Dump cache info', action='store_true')
 	parser.add_argument('--datasets',dest='datasets',help='Print dataset info', action='store_true')
@@ -71,10 +69,9 @@ def get_options():
 	parser.add_argument('--jobs','-j',dest='jobs',help='Print list of jobs',nargs='*')
 
 	options = parser.parse_args()
-	if all(X is None for X in [options.load, options.clean, options.result, options.load_assembly, options.datasets, options.clear_cache]) and not options.cache and not options.attributes and not options.annotations:
+	if all(X is None for X in [options.load, options.clean, options.result, options.datasets, options.clear_cache]) and not options.cache and not options.attributes and not options.annotations:
 		assert options.a is not None, 'No dataset selection to run on'
 		assert options.wa is not None, 'No dataset transformation to run on'
-		assert options.assembly is not None, 'No assembly name specified'
 		if options.b is not None:
 			assert options.fun_merge is not None, 'No action command (load,clean,compute) specified'
 
@@ -100,19 +97,8 @@ def get_options():
 def create_database(cursor, filename):
 	if verbose:
 		print 'Creating database'
-	create_assembly_table(cursor)
 	create_cache(cursor)
 	create_dataset_table(cursor, filename)
-
-def create_assembly_table(cursor):
-	cursor.execute('''
-	CREATE TABLE IF NOT EXISTS
-	assemblies
-	(
-	name varchar(255),
-	location varchar(1000)
-	)
-	''')
 
 def create_cache(cursor):
 	cursor.execute('''
@@ -128,18 +114,15 @@ def create_cache(cursor):
 def create_dataset_table(cursor, filename):
 	file = open(filename)
 	items = file.readline().strip().split('\t')
-	assert items[:5] == list(('location','name','type','annotation','assembly')), "Badly formed dataset table, please ensure the first five columns refer to location, name, type, annotation and assembly"
+	assert items[:2] == list(('location','type')), "Badly formed dataset table, please ensure the first two columns refer to location and type:\n" + "\t".join(items[:2])
 	header = '''
 			CREATE TABLE IF NOT EXISTS 
 			datasets 
 			(
 			location varchar(1000),
- 			name varchar(100), 
 			type varchar(100), 
-			annotation bit, 
-			assembly varchar(100),
 		 '''
-	cursor.execute('\n'.join([header] + [",\n".join(['%s varchar(255)' % X for X in items[5:]])] + [')']))
+	cursor.execute('\n'.join([header] + [",\n".join(['%s varchar(255)' % X for X in items[2:]])] + [')']))
 
 	cursor.execute('SELECT * FROM datasets').fetchall()
 	column_names = [X[0] for X in cursor.description]
@@ -149,14 +132,7 @@ def create_dataset_table(cursor, filename):
 		cursor.execute('INSERT INTO datasets VALUES (%s)' % ",".join("'%s'" % X for X in line.strip().split('\t')))
 	file.close()
 
-###########################################
-## Loading assembly info
-###########################################
 
-def load_assembly(cursor, assembly_name, chrom_sizes):
-	if verbose:
-		print 'Loading path to assembly chromosome length %s for %s' % (chrom_sizes, assembly_name)
-	cursor.execute('INSERT INTO assemblies VALUES(\'%s\',\'%s\')' % (assembly_name, chrom_sizes))
 
 ###########################################
 ## Garbage cleaning 
@@ -179,7 +155,7 @@ def get_dataset_attributes_2(cursor):
 	return [X[1] for X in cursor.execute('PRAGMA table_info(datasets)').fetchall()]
 
 def get_dataset_attributes(cursor):
-	return list(set(get_dataset_attributes_2(cursor)) - set(["annotation","name","assembly","location","type"]))
+	return list(set(get_dataset_attributes_2(cursor)) - set(["location","type"]))
 
 def get_attribute_values_2(cursor, attribute):
 	return [X[0] for X in cursor.execute('SELECT DISTINCT %s FROM datasets' % (attribute)).fetchall()]
@@ -187,8 +163,8 @@ def get_attribute_values_2(cursor, attribute):
 def get_attribute_values(cursor):
 	return dict((attribute, get_attribute_values_2(cursor, attribute)) for attribute in get_dataset_attributes(cursor))
 
-def get_annotations(cursor, assembly):
-	return cursor.execute('SELECT * FROM datasets WHERE assembly=? AND annotation', (assembly,)).fetchall()
+def get_annotations(cursor):
+	return cursor.execute('SELECT * FROM annotation_datasets').fetchall()
 
 def get_datasets(cursor):
 	res = cursor.execute('SELECT * FROM datasets').fetchall()
@@ -203,7 +179,6 @@ def denormalize_params(params):
 def get_dataset_locations(cursor, params, assembly):
 	# Quick check that all the keys are purely alphanumeric to avoid MySQL injections
 	assert not any(re.match('\W', X) is not None for X in params)
-	params['assembly'] = [assembly]
 	query = " AND ".join(attribute_selector(X, params) for X in params)
 	if verbose:
 		print 'Query: SELECT location FROM datasets WHERE ' + query
@@ -313,7 +288,7 @@ def make_normalised_form(fun_merge, fun_A, data_A, fun_B, data_B):
 
 def request_compute(conn, cursor, options, config):
 	fun_A = options.wa 
-	data_A = get_dataset_locations(cursor, options.a, options.assembly)
+	data_A = get_locations(cursor, options.a)
 	options.countA = len(data_A)
 	if len(data_A) ==  0:
 		 return {'status':'INVALID'}
@@ -321,7 +296,7 @@ def request_compute(conn, cursor, options, config):
 
 	if options.b is not None:
 		fun_B = options.wb
-		data_B = get_dataset_locations(cursor, options.b, options.assembly)
+		data_B = get_locations(cursor, options.b)
 		options.countB = len(data_B)
 		if len(data_B) ==  0:
 			 return {'status':'INVALID'}
@@ -362,8 +337,6 @@ def main():
 
 	if options.load is not None:
 		create_database(cursor, options.load)
-	elif options.load_assembly is not None:
-		load_assembly(cursor, options.load_assembly[0], options.load_assembly[1])
 	elif options.clean is not None:
 		clean_database(cursor, options.clean)
 	elif options.cache:
@@ -380,7 +353,7 @@ def main():
 	elif options.datasets:
 		print "\n".join("\t".join(map(str, X)) for X in get_datasets(cursor))
 	elif options.annotations:
-		print "\n".join("\t".join(map(str, X)) for X in get_annotations(cursor, options.assembly))
+		print "\n".join("\t".join(map(str, X)) for X in get_annotations(cursor))
 	else:
 		if options.a is not None:
 			res = dict()
