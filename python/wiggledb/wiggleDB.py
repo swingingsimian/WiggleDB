@@ -69,6 +69,7 @@ def get_options():
 	parser.add_argument('--annotations','-n',dest='annotations',help='Print list of annotation names', action='store_true')
 	parser.add_argument('--jobs','-j',dest='jobs',help='Print list of jobs',nargs='*')
 	parser.add_argument('--upload','-u',dest='upload',help='Upload dataset')
+	parser.add_argument('--description',dest='description',help='Uploaded dataset description',default='TEST')
 
 	options = parser.parse_args()
 	if all(X is None for X in [options.load, options.clean, options.result, options.datasets, options.clear_cache]) and not options.cache and not options.attributes and not options.annotations:

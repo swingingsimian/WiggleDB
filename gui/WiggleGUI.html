@@ -186,10 +186,10 @@
                         <br> 
                         <div style="border:2px solid gray;border-radius:5px;padding:10px;height:100%">
                         1.B Choose some known annotations:
-                        <div class="panel-group">
-                          <select id="refs" multiple>
-                            <!-- This is where the references go -->
-                          </select>
+                        <div class="panel-group" style = "overflow" width="100%">
+                          <table id="refs" width="100%">
+                          <!-- This is where the references go -->
+                          </table>
                         </div>
                       </td>
                     </tr>
@@ -471,6 +471,23 @@
             </div>
             <div class="modal-body">
               I could not upload file <a id="url"></a>. 
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Provenance Modal -->
+      <div class="modal fade" id="Provenance_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel"></h4>
+            </div>
+            <div class="modal-body" id="myModalBody">
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>

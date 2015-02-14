@@ -146,17 +146,32 @@ function create_all_selectors() {
 // Creating the reference selectors 
 //////////////////////////////////////////
 
-function add_annotation(select, annotation) {
-  $("<option>").text(annotation).appendTo(select);
+function provenance(data) {
+  var modal = $('#Provenance_modal').clone();
+  modal.find('#myModalLabel').text(data["name"]);
+  modal.find('#myModalBody').text(data["description"]);
+  modal.modal();
+}
+
+function get_provenance() {
+  var dataset = $(this).attr('value');
+  jQuery.getJSON(CGI_URL + "provenance=" + dataset).done(provenance).fail(catch_JSON_error);
+}
+
+function add_annotation(annotation) {
+  var row = $("<tr>").appendTo($('#refs'));
+  $("<td>").appendTo(row).append($("<input>").attr("class", "select_annot").attr("type","checkbox").attr("value", annotation));
+  $("<td>").appendTo(row).text("\t" + annotation);
+  $("<td>").appendTo(row).attr("align","right").append($("<input>").attr("id","source").attr("type","image").attr("src","images/info.png").attr("value",annotation));
 }
 
 function add_annotations_2(data) {
-  var select = $('#refs');
-  data['annotations'].map(function (annotation) {add_annotation(select, annotation)});
+  data['annotations'].map(add_annotation);
 }
 
 function add_annotations() {
   //$.getJSON(CGI_URL + "assembly=" + assembly + "&annotations=1").done(add_annotations_2).fail(catch_JSON_error);
+  $("#refs").on("click","#source", get_provenance);
   fill_select($('#reference_reduction'), reduction_opts['regions']);
   $.getJSON(CGI_URL + "annotations=1").done(add_annotations_2).fail(catch_JSON_error);
 }
@@ -474,10 +489,12 @@ function annotation() {
     comparison = comparison + " " + width.val()
   }
   var panelA = $('#chooseA2');
+  var annots = [];
+  $('#refs').find(".select_annot").each(function (rank, obj) {if (obj.checked) annots.push($(obj).attr("value"));});
   submit_query(
     [ 
       panel_query(panelA),
-      $('#refs').val().map(function (str) {return "B_name="+str}).join("&"),
+      annots.map(function (str) {return "B_annot_name="+str}).join("&"),
       'B_type=regions',
       'wa='+panel_reduction(panelA),
       'w='+comparison,
