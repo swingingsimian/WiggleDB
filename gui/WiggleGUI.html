@@ -8,7 +8,7 @@
     <meta name="author" content="">
     <link rel="shortcut icon" href="http://www.ebi.ac.uk/favicon.ico">
 
-    <title>WiggleTools</title>
+    <title>GenomeStats</title>
 
     <!-- Just for debugging purposes. Don't actually copy this line! -->
     <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
@@ -25,7 +25,7 @@
     <div class="container">
 
       <div class="masthead">
-        <h3 class="text-muted">WiggleTools</h3>
+        <h3 class="text-muted">GenomeStats</h3>
         <ul class="nav nav-justified" id="myTab">
           <li class="active"><a href="#summarise" data-toggle="tab">Summarise</a></li>
           <li><a href="#compare" data-toggle="tab">Compare</a></li>
@@ -41,17 +41,7 @@
                 <td>
                   <div style="border:2px solid gray;border-radius:5px;padding:10px">
                     <br> 
-                    1. Select all:
-                    <div id="type" class="btn-group" data-toggle="buttons" panel="#choose">
-                      <label class="btn btn-primary active">
-                        <input type="radio" name="options" value="regions"> Regions
-                      </label>
-                      <label class="btn btn-primary">
-                        <input type="radio" name="options" value="signal"> Signal
-                      </label>
-                    </div>
-                    such that:
-                    <br>
+                    1. Select all datasets such that:
                     <br>
                     <div id='selection' class="panel-group">
                       <!-- This is where the selectors go -->
@@ -72,9 +62,7 @@
                 <td>
                   <br>
                   <div style="border:2px solid gray;border-radius:5px;padding:10px">
-                    2. Submit your job:
-                    <br>
-                    Enter your email address (optional): <input type="text" id="email">  <button type='button' class="btn btn-primary" id='summary_button' type="submit">Submit</button>
+                    <button type='button' class="btn btn-primary" id='summary_button' type="submit">Submit</button>
                   </div>
                 </td>
               </tr>
@@ -92,17 +80,7 @@
                       <tr>
                         <td>
                           <br> 
-                          1A. Select all:
-                          <div id="type" class="btn-group" data-toggle="buttons" panel="#chooseA">
-                            <label class="btn btn-primary active">
-                              <input type="radio" name="options" value="regions"> Regions
-                            </label>
-                            <label class="btn btn-primary">
-                              <input type="radio" name="options" value="signal"> Signal
-                            </label>
-                          </div>
-                          such that:
-                          <br>
+                          1A. Select all datasets such that:
                           <br>
                           <div id='selection' class="panel-group">
                             <!-- This is where the selectors go -->
@@ -127,17 +105,7 @@
                       <tr>
                         <td>
                         <br> 
-                          1B. Select all:
-                            <div id="type" class="btn-group" data-toggle="buttons" panel="#chooseB">
-                              <label class="btn btn-primary active">
-                                <input type="radio" name="options" value="regions"> Regions
-                              </label>
-                              <label class="btn btn-primary">
-                                <input type="radio" name="options" value="signal"> Signal
-                              </label>
-                            </div>
-                          such that:
-                          <br>
+                          1B. Select all datasets such that:
                           <br>
                           <div id='selection' class="panel-group">
                             <!-- This is where the selectors go -->
@@ -161,7 +129,7 @@
                 <td colspan="2">
                   <br>
                   <div style="border:2px solid gray;border-radius:5px;padding:10px">
-                   2. Compare both of the above sets by:
+                   2. Compute their:
                     <center>
                     <select class='form-control' id="comparison">
                       <!-- This is where the comparison options go -->
@@ -174,9 +142,7 @@
                 <td colspan="2">
                   <br>
                   <div style="border:2px solid gray;border-radius:5px;padding:10px">
-                    3. Submit job:
-                    <br>
-                    Enter your email address (optional): <input type="text" id="email">  <button type='button' class="btn btn-primary" id="comparison_button" type="submit">Submit</button>
+                    <button type='button' class="btn btn-primary" id="comparison_button" type="submit">Submit</button>
                   </div>
                 </td>
               </tr>
@@ -189,39 +155,29 @@
               <col width="50%">
               <tr>
                 <td>
-		  <div style="border:2px solid gray;border-radius:5px;padding:10px">
-		    <table id="chooseA2" width="100%" style="layout:fixed">
-		      <tr>
-			<td>
-			  <br> 
-			  1A. Select all:
-			  <div id="type" class="btn-group" data-toggle="buttons" panel="#chooseA2">
-			    <label class="btn btn-primary active">
-			      <input type="radio" name="options" value="regions"> Regions
-			    </label>
-			    <label class="btn btn-primary">
-			      <input type="radio" name="options" value="signal"> Signal
-			    </label>
-			  </div>
-			  such that:
-			  <br>
-			  <br>
-			  <div id='selection' class="panel-group">
-			    <!-- This is where the selectors go -->
-			  </div>
-			  <i id="count">
-			    <!-- This is where the count goes -->
-			  </i>
-			  <br>
-			  <br>
-			  ... then merge them using:
-			  <select class='form-control' id="reduction">
-			    <!-- This is where the reduction options go -->
-			  </select>
-			</td>
-		      </tr>
-		    </table>
-		  </div>
+                  <div style="border:2px solid gray;border-radius:5px;padding:10px">
+                    <table id="chooseA2" width="100%" style="layout:fixed">
+                      <tr>
+                        <td>
+                          <br> 
+                          1A. Select all datasets such that:
+                          <br>
+                          <div id='selection' class="panel-group">
+                            <!-- This is where the selectors go -->
+                          </div>
+                          <i id="count">
+                            <!-- This is where the count goes -->
+                          </i>
+                          <br>
+                          <br>
+                          ... then merge them using:
+                          <select class='form-control' id="reduction">
+                            <!-- This is where the reduction options go -->
+                          </select>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
                 </td>
                 <td>
                   <table id="references" width="100%" style="layout:fixed">
@@ -257,9 +213,7 @@
                 <td colspan="2">
                   <br>
                   <div style="border:2px solid gray;border-radius:5px;padding:10px">
-                    3. Submit job:
-                    <br>
-                    Enter your email address (optional): <input type="text" id="email">  <button type="button" class="btn btn-primary" id="annotation_button" type="submit">Submit</button>
+                    <button type="button" class="btn btn-primary" id="annotation_button" type="submit">Submit</button>
                   </div>
                 </td>
               </tr>
@@ -280,8 +234,8 @@
 
           <div class="tab-pane" id="about">
             <br>
-            <p> WiggleTools was developed at <a href="http://ebi.ac.uk">EMBL-EBI</a> in collaboration with the <a href="http://blueprint-epigenome.eu">Blueprint consortium.</a></p>
-            <p> For more information contact: <a href="mailto:wiggletools@ebi.ac.uk">wiggletools@ebi.ac.uk</a></p>
+            <p> GenomeStats was developed at <a href="http://ebi.ac.uk">EMBL-EBI</a> in collaboration with the <a href="http://blueprint-epigenome.eu">Blueprint consortium.</a></p>
+            <p> For more information contact: <a href="mailto:helpdesk@ensembl.org">helpdesk@ensembl.org</a></p>
             <p> If you use this tool, please cite:<br> 
                 <i id="count"><a href="http://bioinformatics.oxfordjournals.org/content/30/7/1008">Daniel R. Zerbino, Nathan Johnson, Thomas Juettemann, Steven P. Wilder and Paul Flicek. WiggleTools: parallel processing of large collections of genome-wide datasets for visualization and statistical analysis. 2014 Bioinformatics 30(7):1008-1009.</a></i>
             </p>
@@ -292,7 +246,14 @@
 
       <!-- Site footer -->
       <div class="footer">
-        <img src="images/EBI_logo.jpg" height="50px">
+        <table id="choose" width="100%">
+          <tr>
+            <td><img src="images/EBI_logo.jpg" height="50px"></td>
+            <td><img src="images/BP.png" height="50px"></td>
+            <td><img src="images/EUFlag.jpg" height="70px"></td>
+            <td><img src="images/FP7.jpg" height="70px"></td>
+          </tr>
+        </table>
       </div>
 
       <!-- Success Modal -->
