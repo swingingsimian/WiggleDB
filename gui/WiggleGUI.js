@@ -174,7 +174,8 @@ function add_multi_select_query(list, multiselect) {
 }
 
 function  get_panel_type(panel) {
-  return panel.find('#type').find('.active').find('input').attr('value');
+  return "regions";
+  //return panel.find('#type').find('.active').find('input').attr('value');
 }
 
 function get_panel_letter(panel) {
@@ -345,7 +346,8 @@ function define_buttons() {
   $('#summary_button').click(summary);
   $('#comparison_button').click(comparison);
   $('#annotation_button').click(annotation);
-  $('#result_button').click(get_result);
+  //$('#result_button').click(get_result);
+  $('#upload_button').click(upload_dataset);
   $('[id*=type]').find('label').change(update_my_panel);
 }
 
@@ -403,8 +405,9 @@ function submit_query(query) {
 
 // Get list of emails separated by ampersands
 function emails(panel) {
-  var array = panel.find('#email').val().split(/[ ;,]+/);
-  return array.map(function (value, index, array) {return "email="+value;}).join("&");
+  return "";
+  //var array = panel.find('#email').val().split(/[ ;,]+/);
+  //return array.map(function (value, index, array) {return "email="+value;}).join("&");
 }
 
 // Request summary

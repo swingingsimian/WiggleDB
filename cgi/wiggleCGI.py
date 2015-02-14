@@ -62,15 +62,7 @@ def main():
 		form = cgi.FieldStorage()
 		conn = sqlite3.connect(config['database_location'])
 		cursor = conn.cursor()
-		if "result" in form:
-			result = wiggletools.wiggleDB.query_result(cursor, form["result"].value, config['batch_system'])
-			if result['status'] == "DONE":
-				report_result(result)
-			else:
-				print json.dumps({'status':result['status']})
-
-		elif "count" in form:
-			assembly = form['assembly'].value
+		if "count" in form:
 			params = dict((re.sub("^._", "", X), form.getlist(X)) for X in form if X != "count")
 			count = len(wiggletools.wiggleDB.get_dataset_locations(cursor, params, assembly))
 			print json.dumps({'query':params,'count':count})
@@ -109,7 +101,7 @@ def main():
 				options.b = options.a
 				options.a = tmp
 			
-			result = wiggletools.wiggleDB.request_compute(cursor, options, config['batch_system'])
+			result = wiggletools.wiggleDB.request_compute(conn, cursor, options, config)
 			if result['status'] == 'DONE':
 				report_result(result)
 			else:
