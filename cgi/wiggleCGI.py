@@ -47,7 +47,7 @@ class WiggleDBOptions(object):
 def report_result(result):
 	base_url = 'http://s3-%s.amazonaws.com/%s/' % (config['s3_region'], config['s3_bucket'])
 	url = re.sub(config['working_directory'], base_url, result['location'])		
-	if result['location'][-3:] == ".bw" or result['location'][-3:] == ".bb":
+	if result['location'][-3:] == ".bw" or result['location'][-3:] == ".bb" or result['location'][-4:] == ".bed":
 		ensembl = 'http://%s/%s/Location/View?g=%s;contigviewbottom=url:%s' % (config['ensembl_server'], config['ensembl_species'], config['ensembl_gene'], url)
 	else:
 		ensembl = url + ".png"

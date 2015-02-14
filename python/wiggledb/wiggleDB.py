@@ -23,6 +23,11 @@ import tempfile
 import os
 import os.path
 import json
+import math 
+import wigglePlots
+import numpy
+import matplotlib
+import matplotlib.pyplot as pyplot
 
 verbose = False
 
@@ -293,6 +298,16 @@ def copy_to_longterm(data, config):
 	if 's3_bucket' in config:
 		os.environ['AWS_CONFIG_FILE'] = config['aws_config']
 		run("aws s3 cp %s s3://%s/%s --acl public-read" % (data, config['s3_bucket'], os.path.basename(data)))
+
+def make_barchart(counts, total, labels, out, format='pdf'):
+	ind = numpy.arange(len(labels))    # the x locations for the groups
+	width = 0.35       # the width of the bars: can also be len(x) sequence
+	heights = [X/float(total) for X in counts]
+	assert all(X <= 1 and X >= 0 for X in heights)
+	errors = [ math.sqrt(2*X*(1-X) / total) for X in heights ]
+	pyplot.bar(ind, heights, width, yerr=errors)
+	pyplot.xticks(ind+width/2., labels)
+	pyplot.savefig(out, format=format)
 
 def launch_quick_compute(conn, cursor, fun_merge, fun_A, data_A, fun_B, data_B, options, config):
 	cmd_A = " ".join([fun_A] + data_A + [':'])

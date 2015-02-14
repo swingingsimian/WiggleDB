@@ -50,7 +50,7 @@ var comparison_opts = {
 };
 
 var annotation_opts = {
-  "regions": {"Intersection":"unit mult", "Union":"unit sum", "Difference": "unit diff"},
+  "regions": {"Intersection":"unit mult", "Union":"unit sum", "Difference": "unit diff", "Overlap frequency": "overlaps"},
   "signal": {"Distribution":"histogram", "Profile curve":"profile", "Profile matrix":"profiles", "Enrichment":"apply_paste"}
 };
 
@@ -387,7 +387,7 @@ function report_result(data) {
       modal.find('img').attr('src',data['view']);
       modal.find('#photo_url').attr('href',data['view']);
       modal.modal();
-    } else {
+    } else if (data['url'].substr(-3,3) == '.bw' || data['url'].substr(-4,4) == '.bb') {
       var modal = $('#Success_modal').clone();
       modal.find('#url').attr('href',data['url']);
       modal.find('#view').attr('href',data['view']);
