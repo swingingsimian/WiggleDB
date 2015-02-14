@@ -55,6 +55,7 @@ def get_options():
 	parser.add_argument('--emails','-e',dest='emails',help='List of e-mail addresses for reminder',nargs='*')
 
 	parser.add_argument('--load',dest='load',help='Datasets to load in database')
+	parser.add_argument('--load_annotations',dest='load_annots',help='References to load in database')
 	parser.add_argument('--clean',dest='clean',help='Delete cached datasets older than X days', type=int)
 	parser.add_argument('--cache',dest='cache',help='Dump cache info', action='store_true')
 	parser.add_argument('--datasets',dest='datasets',help='Print dataset info', action='store_true')
@@ -100,6 +101,7 @@ def create_database(cursor, filename):
 		print 'Creating database'
 	create_cache(cursor)
 	create_dataset_table(cursor, filename)
+	create_annotation_dataset_table(cursor)
 	create_user_dataset_table(cursor)
 
 def create_cache(cursor):
@@ -134,6 +136,17 @@ def create_dataset_table(cursor, filename):
 		cursor.execute('INSERT INTO datasets VALUES (%s)' % ",".join("'%s'" % X for X in line.strip().split('\t')))
 	file.close()
 
+def create_annotation_dataset_table(cursor):
+	header = '''
+			CREATE TABLE IF NOT EXISTS 
+			annotation_datasets 
+			(
+			location varchar(1000),
+			name varchar(1000) UNIQUE,
+ 			description varchar(100)
+			)
+		 '''
+	cursor.execute(header)
 
 def create_user_dataset_table(cursor):
 	header = '''
@@ -188,7 +201,34 @@ def attribute_selector(attribute, params):
 def denormalize_params(params):
 	return dict(("%s_%i" % (attribute, index),value) for attribute in params for (index, value) in enumerate(params[attribute]))
 
-def get_dataset_locations(cursor, params, assembly):
+def get_annotation_dataset_locations(cursor, names):
+	locations = []
+	for name in names:
+		res = cursor.execute('SELECT location FROM annotation_datasets WHERE name=?', (name,)).fetchall()
+		if len(res) > 0:
+			locations.append(res[0][0])
+		else:
+			return []
+	return locations
+
+def get_annotation_dataset_description(cursor, name):
+	res = cursor.execute('SELECT description FROM annotation_datasets WHERE name=?', (name,)).fetchall()
+	if len(res) > 0:
+		return {'name':name, 'description':res[0][0]}
+	else:
+		return {'ERROR'}
+
+def get_user_dataset_locations(cursor, names):
+	locations = []
+	for name in names:
+		res = cursor.execute('SELECT location FROM user_datasets WHERE name=?', (name,)).fetchall()
+		if len(res) > 0:
+			locations.append(res[0][0])
+		else:
+			return []
+	return locations
+
+def get_dataset_locations(cursor, params):
 	# Quick check that all the keys are purely alphanumeric to avoid MySQL injections
 	assert not any(re.match('\W', X) is not None for X in params)
 	query = " AND ".join(attribute_selector(X, params) for X in params)
@@ -199,6 +239,14 @@ def get_dataset_locations(cursor, params, assembly):
 	if verbose:
 		print 'Found:\n' + "\n".join(X[0] for X in res)
 	return sorted(X[0] for X in res)
+
+def get_locations(cursor, params):
+	if 'annot_name' in params:
+		return get_annotation_dataset_locations(cursor, params['annot_name'])
+	elif 'user_name' in params:
+		return get_user_dataset_locations(cursor, params['user_name'])
+	else:
+		return get_dataset_locations(cursor, params)
 
 def run(cmd):
 	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -392,6 +440,11 @@ def main():
 
 	if options.load is not None:
 		create_database(cursor, options.load)
+	elif options.load_annots is not None:
+		for line in open(options.load_annots):
+			items = line.strip().split('\t')
+			assert len(items) == 3
+			cursor.execute('INSERT INTO annotation_datasets VALUES (?,?,?)',  items)
 	elif options.clean is not None:
 		clean_database(cursor, options.clean)
 	elif options.cache:
