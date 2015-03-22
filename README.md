@@ -27,36 +27,27 @@ cp -r python/wiggletools/ /usr/local/lib/python-2.7/dist-packages
 Prepare the data
 ----------------
 
-1. Prepare a tab-delimited file, say datasets.tsv. The first five columns headers must be:	
+1. Prepare a tab-delimited file, say datasets.tsv. The first header must be:	
 
 	```
-	location	name	type	annotation	assembly
+	location
 	```
-	Their content should be:
-	- location: absolute path to the file
-	- name: string (useful for annotations)
-	- type: regions or signal
-	- annotation: TRUE or FALSE
-	- assembly: assembly name (e.g. GRCh38)
-	- all other columns are your business. Try to select meaningful headers, and remove columns with too many values.
+	and its content should be the absolute path to the file. All other columns are your business. Try to select meaningful headers, and remove columns with too many values.
 
-2. Prepare a tab-delimited file, say chromosome.lengths, with chromosome lengths and ensure it has 644 permissions, e.g.:
-
+2. Prepare a tab-delimited file, say annotations.tsv with annotation metadata. The three column headers must be: 
 	```
-	1	249250621
-	10	135534747
-	11	135006516
-	12	133851895
-	13	115169878
-	14	107349540
-	15	102531392
+	location	name	description
 	```
+	Where:
+	- location is a file location
+	- name is a short unique label
+	- description is a longer HTML description of the dataset.
 
 3. Create an SQLite3 database:
 
 	```	
 	wiggleDB.py --database database.sqlite3 --load datasets.tsv
-	wiggleDB.py --database database.sqlite3 --load assembly_name chromosome.lengths
+	wiggleDB.py --database database.sqlite3 --load_annotations annotations.tsv 
 	chmod 777 database.sqlite3
 	```
 
