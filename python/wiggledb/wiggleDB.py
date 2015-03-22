@@ -263,7 +263,7 @@ def run(cmd):
 		sys.stdout.write("Failed in running %s\n" % (cmd))
 		sys.stdout.write("OUTPUT:\n%s\n" % (out))
 		sys.stdout.write("ERROR:\n%s\n" % (out))
-		raise
+		raise BaseException
 	return out
 
 ###########################################
