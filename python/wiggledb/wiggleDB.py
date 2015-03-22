@@ -124,15 +124,14 @@ def create_cache(cursor):
 def create_dataset_table(cursor, filename):
 	file = open(filename)
 	items = file.readline().strip().split('\t')
-	assert items[:2] == list(('location','type')), "Badly formed dataset table, please ensure the first two columns refer to location and type:\n" + "\t".join(items[:2])
+	assert items[0] == 'location', "Badly formed dataset table, please ensure the first column refers to location:\n" + items[0]
 	header = '''
 			CREATE TABLE IF NOT EXISTS 
 			datasets 
 			(
 			location varchar(1000),
-			type varchar(100), 
 		 '''
-	cursor.execute('\n'.join([header] + [",\n".join(['%s varchar(255)' % X for X in items[2:]])] + [')']))
+	cursor.execute('\n'.join([header] + [",\n".join(['%s varchar(255)' % X for X in items[1:]])] + [')']))
 
 	cursor.execute('SELECT * FROM datasets').fetchall()
 	column_names = [X[0] for X in cursor.description]
@@ -186,7 +185,7 @@ def get_dataset_attributes_2(cursor):
 	return [X[1] for X in cursor.execute('PRAGMA table_info(datasets)').fetchall()]
 
 def get_dataset_attributes(cursor):
-	return list(set(get_dataset_attributes_2(cursor)) - set(["location","type"]))
+	return list(set(get_dataset_attributes_2(cursor)) - set(["location"]))
 
 def get_attribute_values_2(cursor, attribute):
 	return [X[0] for X in cursor.execute('SELECT DISTINCT %s FROM datasets' % (attribute)).fetchall()]
