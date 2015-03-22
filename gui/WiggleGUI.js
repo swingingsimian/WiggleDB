@@ -195,7 +195,7 @@ function create_all_selectors() {
 // Creating the reference selectors 
 //////////////////////////////////////////
 
-function provenance(data) {
+function display_provenance(data) {
   var modal = $('#Provenance_modal').clone();
   modal.find('#myModalLabel').text(data["name"]);
   modal.find('#myModalBody').text(data["description"]);
@@ -204,7 +204,7 @@ function provenance(data) {
 
 function get_provenance() {
   var dataset = $(this).attr('value');
-  jQuery.getJSON(CGI_URL + "provenance=" + dataset).done(provenance).fail(catch_JSON_error);
+  jQuery.getJSON(CGI_URL + "provenance=" + dataset).done(display_provenance).fail(catch_JSON_error);
 }
 
 function add_annotation(annotation) {
