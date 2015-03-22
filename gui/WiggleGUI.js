@@ -122,9 +122,9 @@ function create_selection_div(panel) {
   var row = $("<div>").addClass("row").appendTo(panel.find("#selection"));
 
   // Division into fixed width columns
-  var col1 = $("<div>").addClass("form-group").addClass("col-lg-5").appendTo(row);
-  $("<div>").addClass("form-group").addClass("col-lg-1").text(" is: ").appendTo(row);
-  var col2 = $("<div>").addClass("form-group").addClass("col-lg-5").appendTo(row);
+  var col1 = $("<div>").addClass("form-group").addClass("col-md-5").appendTo(row);
+  $("<div>").addClass("form-group").addClass("col-md-1").text(" is: ").appendTo(row);
+  var col2 = $("<div>").addClass("form-group").addClass("col-md-5").appendTo(row);
 
   // Create attribute selector in column 1:
   create_attribute_select(col1);
