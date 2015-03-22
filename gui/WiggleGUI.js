@@ -333,7 +333,7 @@ function report_result(data) {
       modal.find('img').attr('src',data['view']);
       modal.find('#photo_url').attr('href',data['view']);
       modal.modal();
-    } else if (data['url'].substr(-3,3) == '.bw' || data['url'].substr(-4,4) == '.bb') {
+    } else if (data['url'].substr(-3,3) == '.bw' || data['url'].substr(-3,3) == '.bb' || data['url'].substr(-4,4) == '.bed') {
       var modal = $('#Success_modal').clone();
       modal.find('#url').attr('href',data['url']);
       modal.find('#view').attr('href',data['view']);
