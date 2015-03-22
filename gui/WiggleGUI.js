@@ -353,9 +353,18 @@ function get_result() {
   $.getJSON(CGI_URL + "result=" + $('#result_box').val()).done(report_result).fail(catch_JSON_error);
 }
 
+///////////////////////////////////////////
+// Button actions
+///////////////////////////////////////////
+
 // Upload user dataset
 function upload_dataset() {
-  $.getJSON(CGI_URL + "uploadUrl=" + $('#uploadURL').val() + "&description=" + $("#uploadDescription").val()).done(report_upload).fail(catch_JSON_error);
+  var files = $("#upload").find("#file").val();
+  if (files == null) {
+    $.getJSON(CGI_URL + "userid=" + user_ID() + "&uploadUrl=" + $('#URL').val() + "&description=" + $("#description").val()).done(report_upload).fail(catch_JSON_error);
+  } else {
+    $.post(CGI_URL  + "userid=" + user_ID() + "uploadFile=1&description=" + $("#description").val(), files, "multipart/form-data").done(report_upload).fail(catch_JSON_error);
+  }
 }
 
 function report_upload(data) {
@@ -421,4 +430,48 @@ function annotation() {
 // JSON error handler
 function catch_JSON_error(jqXHR, textStatus, errorThrown) {
   console.log('JSON failed: ' + textStatus + ":" + errorThrown + ":" + jqXHR.responseText + ":" + jqXHR.getAllResponseHeaders());
+}
+
+///////////////////////////////////////////
+// The Cookie Jar
+///////////////////////////////////////////
+
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  var expires = "expires="+d.toUTCString();
+  document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var ca = document.cookie.split(';');
+  for(var i=0; i<ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0)==' ') c = c.substring(1);
+    if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+  }
+  return "";
+} 
+
+///////////////////////////////////////////
+// User ID
+///////////////////////////////////////////
+
+function generate_ID() {
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, 
+      function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+      }
+    );
+}
+
+function user_ID() {
+  var user = getCookie("username");
+  if (user != "") {
+    return user;
+  } else {
+    setCookie("username", generate_ID(), 180);
+  }    
 }

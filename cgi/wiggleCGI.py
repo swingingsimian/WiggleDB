@@ -14,6 +14,13 @@ CONFIG_FILE = '/data/wiggletools/wiggletools.conf'
 config = wiggletools.wiggleDB.read_config_file(CONFIG_FILE)
 cgitb.enable(logdir=config['logdir'])
 
+#try: # Windows needs stdio set for binary mode.
+#    import msvcrt
+#    msvcrt.setmode (0, os.O_BINARY) # stdin  = 0
+#    msvcrt.setmode (1, os.O_BINARY) # stdout = 1
+#except:
+#    pass
+
 class WiggleDBOptions(object):
 	def __init__(self):
 		self.conn = None
@@ -58,6 +65,9 @@ def main():
 		elif 'uploadUrl' in form:
 			print json.dumps(wiggletools.wiggleDB.upload_dataset(cursor, config['working_directory'], form['uploadUrl'].value, form['description'].value))
 
+		elif 'uploadFile' in form:
+			print json.dumps(wiggletools.wiggleDB.save_dataset(cursor, config['working_directory'], form['file'], form['description'].value))
+
 		elif 'provenance' in form:
 			print json.dumps(wiggletools.wiggleDB.get_annotation_dataset_description(cursor, form['provenance'].value))
 
@@ -84,11 +94,6 @@ def main():
 			if len(options.b.keys()) == 0:
 				options.b = None
 
-			if options.a['type'] == 'regions' and options.b['type'] == 'signal':
-				tmp = options.b
-				options.b = options.a
-				options.a = tmp
-			
 			result = wiggletools.wiggleDB.request_compute(conn, cursor, options, config)
 			if result['status'] == 'DONE':
 				report_result(result)

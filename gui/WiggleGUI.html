@@ -281,7 +281,7 @@
                   URL: 
                 </td>
                 <td>
-                  <input type="text" id="uploadURL"> 
+                  <input type="text" id="URL"> 
                 </td>
               </tr>
               <tr>
@@ -289,12 +289,28 @@
                   Name: 
                 </td>
                 <td>
-                  <input type="text" id="uploadDescription"> 
+                  <input type="text" id="description"> 
                 </td>
               </tr>
             </table>
             <br>
             <button type="button" class="btn btn-primary" id="upload_button" type="submit">Upload</button>
+            <p>
+              Or:
+            </p>
+            <br>
+            <form enctype="multipart/form-data" action="../cgi-bin/wiggleCGI.py?uploadFile=1"  method="post">
+              <p>
+                File: <input type="file" name="file">
+              </p>
+              <p>
+                Name: <input type="text" id="description"> 
+              </p>
+              <p>
+                <input type="submit" class='btn btn-primary' value="Upload">
+              </p>
+            </form>
+            <br>
           </div>
 
           <div class="tab-pane" id="retrieve">

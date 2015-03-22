@@ -459,6 +459,20 @@ def upload_dataset(cursor, dir, url, description):
 		raise
 		return {'status':'UPLOAD_FAILED','url':url}
 
+def save_dataset(cursor, dir, fileitem, description):
+	try:
+		fh, destination = tempfile.mkstemp(suffix=".bed",dir=dir)
+		file = open(destination, "w")
+		file.write(fileitem.file.read())
+		ret = check_file_integrity(file)
+		if ret is not None:
+			return ret
+		register_user_dataset(cursor, file, description)
+		return {'status':'UPLOADED'}
+	except:
+		raise
+		return {'status':'UPLOAD_FAILED','url':url}
+
 ###########################################
 ## Main
 ###########################################
