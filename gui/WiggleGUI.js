@@ -135,10 +135,60 @@ function create_selection_div(panel) {
   update_panel(panel);
 }
 
+function all_filters_used(panel) {
+  var res = true;
+  panel.find(".filter").each(
+    function (index, obj) {
+      if ($(obj).find("#constraint").val() == "(No filter)") {
+        res = false;
+      }
+    }
+  );
+  return res;
+}
+
+function reset_filter() {
+  var panel = $(this).parents(".tab-pane");
+  if ($(this).val() == "(No filter)" && panel.find(".filter").length > 1) {
+    $(this).parents(".filter").remove();
+  }
+  if (all_filters_used(panel)) {
+    create_filter_div(panel);
+  }
+}
+
+function create_filter_div(panel) {
+  var row = $('<div>').attr('class','filter row').appendTo(panel.find(".filters"));
+
+  // Division into fixed width columns
+  var col1 = $("<div>").addClass("form-group").addClass("col-md-4").appendTo(row);
+  var col2 = $("<div>").addClass("form-group").text(" bp from ").addClass("col-md-4").appendTo(row);
+  var col3 = $("<div>").addClass("form-group").addClass("col-md-4").appendTo(row);
+
+  var verb = $("<select>").addClass("form-control").attr('id','constraint').appendTo(col1);
+  $("<option>").attr("value","overlaps").text("are within").attr("selected","selected").appendTo(verb);
+  $("<option>").attr("value","noverlaps").text("are farther than").attr("selected","selected").appendTo(verb);
+  $("<option>").attr("value",null).text("(No filter)").attr("selected","selected").appendTo(verb);
+
+  $("<input>").attr('type','text').attr('id','distance').attr('style','width: 50%;').change(update_my_tab).prependTo(col2);
+
+  var object = $("<select>").addClass("form-control").attr('id','reference').appendTo(col3);
+  if (annotations != null) {
+    annotations.map(function(attribute) {add_attribute_to_select(attribute, object);});
+  }
+
+  verb.change(reset_filter);
+}
+
+function create_panel(panel) {
+  create_selection_div(panel);
+  create_filter_div(panel);
+}
+
 function create_all_selectors() {
   jQuery.getJSON(attribute_values_file).done(function(values) {
     attribute_values = values;
-    selection_panels.map(function (id) {create_selection_div($("#"+id));});
+    selection_panels.map(function (id) {create_panel($("#"+id));});
   }).fail(catch_JSON_error);
 }
 
@@ -209,16 +259,23 @@ function panel_query(panel) {
 ///////////////////////////////////////////
 
 function panel_reduction(panel) {
-  if (panel.find('#reduction').prop('disabled')) {
-    return "";
-  }
-  res = panel.find('#reduction').val();
-  thresholds = panel.find('#threshold_val');
-  if (thresholds.length == 0 || thresholds.val() == "") {
-    return res;	
-  } else {
-    return "gt " + thresholds.val() + " " + res;
-  }
+  var commands = [];
+  panel.find('.filter').each(
+    function (index, div) {
+      var constraint = $(div).find("#constraint").val();
+      var distance = $(div).find("#distance").val();
+      var reference = $(div).find("#reference").val();
+      if (constraint == "(No filter)") {
+	return;
+      } else if (distance == null || distance == "") {
+	commands.push([constraint, reference].join(" ")); 
+      } else {
+	commands.push([constraint, "extend", distance, reference].join(" ")); 
+      } 
+    }
+  );
+  commands.push(panel.find('#reduction').val());
+  return commands.join(" ");
 }
 
 //////////////////////////////////////////

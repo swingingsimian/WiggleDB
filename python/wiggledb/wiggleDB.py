@@ -310,15 +310,28 @@ def make_barchart(counts, total, labels, out, format='pdf'):
 	pyplot.xticks(ind+width/2., labels)
 	pyplot.savefig(out, format=format)
 
+def substitute_reference_locations(cursor, string):
+	items = string.split(" ")
+	index = 0
+	while index < len(items) and (items[index] == 'overlaps' or items[index] == 'noverlaps'):
+		if items[index + 1] == 'extend':
+			items[index + 3] = get_annotation_dataset_locations(cursor, [items[index + 3]])[0]
+			index += 4
+		else:
+			items[index + 3] = get_annotation_dataset_locations(cursor, [items[index + 1]])[0]
+			index += 2
+
+	return " ".join(items)
+
 def launch_quick_compute(conn, cursor, fun_merge, fun_A, data_A, fun_B, data_B, options, config):
-	cmd_A = " ".join([fun_A] + data_A + [':'])
+	cmd_A = " ".join([substitute_reference_locations(cursor, fun_A)] + data_A + [':'])
 
 	if data_B is not None:
 		merge_words = fun_merge.split(' ')
 
 		assert fun_merge is not None
 		if fun_B is not None:
-			cmd_B = " ".join([fun_B] + data_B + [':'])
+			cmd_B = " ".join([substitute_reference_locations(cursor, fun_B)] + data_B + [':'])
 		else:
 			cmd_B = " ".join(data_B)
 
