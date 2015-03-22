@@ -238,10 +238,12 @@ def get_dataset_locations(cursor, params):
 	# Quick check that all the keys are purely alphanumeric to avoid MySQL injections
 	assert not any(re.match('\W', X) is not None for X in params)
 	query = " AND ".join(attribute_selector(X, params) for X in params)
+	if len(query) > 0:
+		query = ' WHERE ' + query 
 	if verbose:
-		print 'Query: SELECT location FROM datasets WHERE ' + query
+		print 'Query: SELECT location FROM datasets' + query
 		print 'Where:' + str(denormalize_params(params))
-	res = cursor.execute('SELECT location FROM datasets WHERE ' + query, denormalize_params(params)).fetchall()
+	res = cursor.execute('SELECT location FROM datasets' + query, denormalize_params(params)).fetchall()
 	if verbose:
 		print 'Found:\n' + "\n".join(X[0] for X in res)
 	return sorted(X[0] for X in res)
