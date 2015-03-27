@@ -457,11 +457,20 @@ function submit_query(query) {
   $.getJSON(CGI_URL + query).done(report_result).fail(catch_JSON_error);
 }
 
+function get_optional_user_id() {
+  var user = getCookie("username");
+  if (user != "") {
+    return "userid=" + user;
+  } else {
+    return "";
+  }
+}
+
 // Request summary
 function summary() {
   var panel = $('#choose');
   $(this).button('loading');
-  submit_query(panel_query(panel) + '&wa=' + panel_reduction(panel)); 
+  submit_query(panel_query(panel) + '&wa=' + panel_reduction(panel) + "&" + get_optional_user_id()); 
 }
 
 // Request comparison
@@ -474,20 +483,12 @@ function comparison() {
     [ 
       panel_query(panelA),
       panel_query(panelB),
+      get_optional_user_id(),
       'wa='+panel_reduction(panelA),
       'wb='+panel_reduction(panelB),
       'w='+comparison
     ].join("&")
   ); 
-}
-
-function get_optional_user_id() {
-  var user = getCookie("username");
-  if (user != "") {
-    return "userid=" + user;
-  } else {
-    return "";
-  }
 }
 
 // Request annotation
