@@ -160,7 +160,7 @@ def create_user_dataset_table(cursor):
 			CREATE TABLE IF NOT EXISTS 
 			user_datasets 
 			(
- 			name varchar(100) UNIQUE,
+ 			name varchar(100),
 			location varchar(1000),
 			userid varchar(100)
 			)
