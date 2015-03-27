@@ -346,7 +346,7 @@ def substitute_reference_locations(cursor, string, userid):
 			items[index + 3] = get_annotation_dataset_locations(cursor, [items[index + 3]], userid)[0]
 			index += 4
 		else:
-			items[index + 3] = get_annotation_dataset_locations(cursor, [items[index + 1]], userid)[0]
+			items[index + 1] = get_annotation_dataset_locations(cursor, [items[index + 1]], userid)[0]
 			index += 2
 
 	return " ".join(items)
@@ -383,6 +383,7 @@ def launch_quick_compute(conn, cursor, fun_merge, fun_A, data_A, fun_B, data_B, 
 			run(" ".join(['wiggletools','write', destination, fun_merge, cmd_A, cmd_B]))
 	else:
 		fh, destination = tempfile.mkstemp(suffix='.bed',dir=options.working_directory)
+		os.remove(destination)
 		run(" ".join(['wiggletools','write', destination, cmd_A]))
 
 	return destination
