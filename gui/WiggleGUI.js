@@ -192,6 +192,25 @@ function create_all_selectors() {
 }
 
 //////////////////////////////////////////
+// Creating the personal reference selectors 
+//////////////////////////////////////////
+
+function add_personal_annotation(annotation) {
+  var row = $("<tr>").appendTo($('#refs'));
+  $("<td>").appendTo(row).append($("<input>").attr("class", "select_annot").attr("type","checkbox").attr("value", annotation));
+  $("<td>").appendTo(row).text("\t" + annotation);
+  $("<td>").appendTo(row);
+}
+
+function insert_personal_annotations(data) {
+  data['files'].map(add_personal_annotation);
+}
+
+function add_personal_annotations() {
+  jQuery.getJSON(CGI_URL + "myannotations=1&userid=" + user_ID()).done(insert_personal_annotations).fail(catch_JSON_error);
+}
+
+//////////////////////////////////////////
 // Creating the reference selectors 
 //////////////////////////////////////////
 
@@ -218,6 +237,9 @@ function add_annotations() {
   $("#refs").on("click","#source", get_provenance);
   fill_select($('#reference_reduction'), reduction_opts);
   annotations.map(add_annotation);
+  if (getCookie("username") != "" && getCookie("username") != null) {
+    add_personal_annotations();
+  }
 }
 
 //////////////////////////////////////////
@@ -311,7 +333,8 @@ function define_buttons() {
   $('#summary_button').click(summary);
   $('#comparison_button').click(comparison);
   $('#annotation_button').click(annotation);
-  $('#upload_button').click(upload_dataset);
+  $('#upload_button').click(upload_url);
+  $('#upload_file_button').click(upload_file);
 }
 
 function update_my_panel() {
@@ -357,19 +380,43 @@ function get_result() {
 // Button actions
 ///////////////////////////////////////////
 
+function upload_file() {
+  $(this).button('loading');
+  var formData = new FormData();
+  formData.append("file", $(this).parents("#FileUpload").find("#file").get(0).files[0]);
+  $.ajax({
+    url: CGI_URL  + "uploadFile=1&userid=" + user_ID() + "&description=" + $(this).parents("#FileUpload").find("#description").val(),
+    data: formData, 
+    processData: false, 
+    type: 'POST',
+    contentType: false,
+    success: report_upload,
+    fail: catch_JSON_error
+  });
+  
+}
+
 // Upload user dataset
-function upload_dataset() {
+function upload_url() {
   var files = $("#upload").find("#file").val();
-  if (files == null) {
-    $.getJSON(CGI_URL + "userid=" + user_ID() + "&uploadUrl=" + $('#URL').val() + "&description=" + $("#description").val()).done(report_upload).fail(catch_JSON_error);
-  } else {
-    $.post(CGI_URL  + "userid=" + user_ID() + "uploadFile=1&description=" + $("#description").val(), files, "multipart/form-data").done(report_upload).fail(catch_JSON_error);
-  }
+  $(this).button('loading');
+  $.getJSON(CGI_URL + "userid=" + user_ID() + "&uploadUrl=" + $('#URL').val() + "&description=" + $("#description").val()).done(report_upload).fail(catch_JSON_error);
 }
 
 function report_upload(data) {
+  reset_buttons();
   if (data["status"] == "UPLOADED") {
+      add_personal_annotation(data['name'])
       var modal = $('#Success_upload_modal').clone();
+      modal.modal();
+  } else if (data['status'] == 'NAME_USED') {
+      var modal = $('#Rename_modal').clone();
+      modal.find('#url').text(data['url']);
+      modal.modal();
+  } else if (data['status'] == 'WRONG_ASSEMBLY') {
+      var modal = $('#Assembly_modal').clone();
+      modal.find('#expected_chromosomes').text(data['expected_chromosomes'].join(", "));
+      modal.find('#found_chromosomes').text(data['found_chromosomes'].join(", "));
       modal.modal();
   } else if ("format" in data) {
       var modal = $('#Malformed_upload_modal').clone();
@@ -411,8 +458,18 @@ function comparison() {
   ); 
 }
 
+function get_optional_user_id() {
+  var user = getCookie("username");
+  if (user != "") {
+    return "userid=" + user;
+  } else {
+    return "";
+  }
+}
+
 // Request annotation
 function annotation() {
+  $(this).button('loading');
   var comparison = $('#annotation').val();
   var panelA = $('#chooseA2');
   var annots = [];
@@ -421,6 +478,7 @@ function annotation() {
     [ 
       panel_query(panelA),
       annots.map(function (str) {return "B_annot_name="+str}).join("&"),
+      get_optional_user_id(),
       'wa='+panel_reduction(panelA),
       'w='+comparison
     ].join("&")
@@ -459,7 +517,8 @@ function getCookie(cname) {
 ///////////////////////////////////////////
 
 function generate_ID() {
-    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, 
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+      /[xy]/g, 
       function(c) {
         var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
         return v.toString(16);

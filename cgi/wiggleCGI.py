@@ -34,7 +34,7 @@ class WiggleDBOptions(object):
 		self.remember = False
 		self.db = config['database_location']
 		self.config = CONFIG_FILE
-		self.emails = None
+		self.userid = None
 		
 
 def report_result(result):
@@ -60,22 +60,27 @@ def main():
 			print json.dumps({'query':params,'count':count})
 
 		elif 'annotations' in form:
-			print json.dumps({"annotations": [X[1] for X in wiggletools.wiggleDB.get_annotations(cursor)]})
+			print json.dumps({"annotations": [X[0] for X in wiggletools.wiggleDB.get_annotations(cursor)]})
 
 		elif 'uploadUrl' in form:
-			print json.dumps(wiggletools.wiggleDB.upload_dataset(cursor, config['working_directory'], form['uploadUrl'].value, form['description'].value))
+			print json.dumps(wiggletools.wiggleDB.upload_dataset(cursor, config['working_directory'], form['uploadUrl'].value, form['description'].value, form['userid'].value))
 
 		elif 'uploadFile' in form:
-			print json.dumps(wiggletools.wiggleDB.save_dataset(cursor, config['working_directory'], form['file'], form['description'].value))
+			print json.dumps(wiggletools.wiggleDB.save_dataset(cursor, config['working_directory'], form['file'], form['description'].value, form['userid'].value))
 
 		elif 'provenance' in form:
 			print json.dumps(wiggletools.wiggleDB.get_annotation_dataset_description(cursor, form['provenance'].value))
+
+		elif 'myannotations' in form:
+			print json.dumps(wiggletools.wiggleDB.get_user_datasets(cursor, form['userid'].value))
 
 		elif 'wa' in form:
 			options = WiggleDBOptions()
 			options.wa = form['wa'].value
 			options.working_directory = config['working_directory']
 			options.s3 = config['s3_bucket']
+			if 'userid' in form:
+				options.userid = form['userid'].value
 			if 'email' in form:
 				options.emails = form.getlist('email')
 
@@ -105,8 +110,8 @@ def main():
 
 		conn.commit()
 		conn.close()
-        except:
-                print json.dumps("ERROR")
+	except:
+		print json.dumps({'status':"ERROR"})
 		raise
 
 if __name__ == "__main__":

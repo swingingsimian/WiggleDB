@@ -274,43 +274,64 @@
           </div>
 
           <div class="tab-pane" id="upload">
-            <br>
-            <table>
-              <tr>
-                <td>
-                  URL: 
-                </td>
-                <td>
-                  <input type="text" id="URL"> 
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  Name: 
-                </td>
-                <td>
-                  <input type="text" id="description"> 
-                </td>
-              </tr>
-            </table>
-            <br>
-            <button type="button" class="btn btn-primary" id="upload_button" type="submit">Upload</button>
-            <p>
-              Or:
-            </p>
-            <br>
-            <form enctype="multipart/form-data" action="../cgi-bin/wiggleCGI.py?uploadFile=1"  method="post">
-              <p>
-                File: <input type="file" name="file">
-              </p>
-              <p>
-                Name: <input type="text" id="description"> 
-              </p>
-              <p>
-                <input type="submit" class='btn btn-primary' value="Upload">
-              </p>
-            </form>
-            <br>
+	    <div style="border:2px solid gray;border-radius:5px;padding:10px">
+	      <table width='100%'>
+		<tr>
+		  <td width='50%'>
+		    <table>
+		      <tr>
+			<td>
+			  URL: 
+			</td>
+			<td>
+			  <input type="text" id="URL"> 
+			</td>
+		      </tr>
+		      <tr>
+			<td>
+			  Name: 
+			</td>
+			<td>
+			  <input type="text" id="description"> 
+			</td>
+		      </tr>
+		      <tr>
+			<td>
+			  <button type="button" class="btn btn-primary" id="upload_button" type="submit" data-loading-text="Loading...">Upload</button>
+			</td>
+		      </tr>
+		    </table>
+		  </td>
+		  <td width='50%'>
+		    <form enctype="multipart/form-data">
+		      <table id="FileUpload">
+			<tr>
+			  <td>
+			    File:
+			  </td>
+			  <td> 
+			    <input type="file" id="file">
+			  </td>
+			</tr>
+			<tr>
+			  <td>
+			    Name: 
+			  </td>
+			  <td> 
+			    <input type="text" id="description"> 
+			  </td>
+			</tr>
+			<tr>
+			  <td>
+			    <button type="button" class="btn btn-primary" id="upload_file_button" type="submit" data-loading-text="Loading...">Upload</button>
+			  </td>
+			</tr>
+		      </table>
+		    </form>
+		  </td>
+		</tr>
+	      </table>
+            </div>
           </div>
 
           <div class="tab-pane" id="retrieve">
@@ -520,7 +541,50 @@
             <div class="modal-body">
               I encountered an error uploading file <a id="url"></a>. 
               <br>
-              I assumed it was in <div id="format"></div> format, but I could be wrong. 
+              I assumed it was in <span id="format"></span> format, but I could be wrong. 
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data NOT uploaded Modal -->
+      <div class="modal fade" id="Assembly_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">Failure</h4>
+            </div>
+            <div class="modal-body">
+              I did not recognize the chromosome names in your file, I expected:
+              <br>
+              <span id="expected_chromosomes"></span>
+              <br>
+              <br>
+              yet I found:
+              <br>
+              <span id="found_chromosomes"></span>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data NOT uploaded Modal -->
+      <div class="modal fade" id="Rename_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">Failure</h4>
+            </div>
+            <div class="modal-body">
+              I could not upload file, please pick another name. 
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>

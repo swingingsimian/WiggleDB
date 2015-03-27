@@ -64,6 +64,7 @@ def get_options():
 	parser.add_argument('--clean',dest='clean',help='Delete cached datasets older than X days', type=int)
 	parser.add_argument('--cache',dest='cache',help='Dump cache info', action='store_true')
 	parser.add_argument('--datasets',dest='datasets',help='Print dataset info', action='store_true')
+	parser.add_argument('--user_datasets',dest='user_datasets',help='Print user dataset info', nargs='*')
 	parser.add_argument('--clear_cache',dest='clear_cache',help='Reset cache info', nargs='*')
 	parser.add_argument('--remember',dest='remember',help='Preserve dataset from garbage collection', action='store_true')
 	parser.add_argument('--dry-run',dest='dry_run',help='Do not run the command, print wiggletools command', action='store_true')
@@ -74,6 +75,7 @@ def get_options():
 	parser.add_argument('--annotations','-n',dest='annotations',help='Print list of annotation names', action='store_true')
 	parser.add_argument('--jobs','-j',dest='jobs',help='Print list of jobs',nargs='*')
 	parser.add_argument('--upload','-u',dest='upload',help='Upload dataset')
+	parser.add_argument('--userid',dest='userid',help='User name')
 	parser.add_argument('--description',dest='description',help='Uploaded dataset description',default='TEST')
 
 	options = parser.parse_args()
@@ -109,6 +111,7 @@ def create_database(cursor, filename):
 	create_dataset_table(cursor, filename)
 	create_annotation_dataset_table(cursor)
 	create_user_dataset_table(cursor)
+	create_chromosome_table(cursor)
 
 def create_cache(cursor):
 	cursor.execute('''
@@ -146,8 +149,8 @@ def create_annotation_dataset_table(cursor):
 			CREATE TABLE IF NOT EXISTS 
 			annotation_datasets 
 			(
-			location varchar(1000),
 			name varchar(1000) UNIQUE,
+			location varchar(1000),
  			description varchar(100)
 			)
 		 '''
@@ -159,7 +162,18 @@ def create_user_dataset_table(cursor):
 			user_datasets 
 			(
  			name varchar(100) UNIQUE,
-			location varchar(1000)
+			location varchar(1000),
+			userid varchar(100)
+			)
+		 '''
+	cursor.execute(header)
+
+def create_chromosome_table(cursor):
+	header = '''
+			CREATE TABLE IF NOT EXISTS 
+			chromosomes
+			(
+ 			name varchar(1000) UNIQUE
 			)
 		 '''
 	cursor.execute(header)
@@ -206,14 +220,16 @@ def attribute_selector(attribute, params):
 def denormalize_params(params):
 	return dict(("%s_%i" % (attribute, index),value) for attribute in params for (index, value) in enumerate(params[attribute]))
 
-def get_annotation_dataset_locations(cursor, names):
+def get_annotation_dataset_locations(cursor, names, userid = None):
 	locations = []
 	for name in names:
 		res = cursor.execute('SELECT location FROM annotation_datasets WHERE name=?', (name,)).fetchall()
 		if len(res) > 0:
 			locations.append(res[0][0])
-		else:
-			return []
+		elif userid is not None:
+			res = cursor.execute('SELECT location FROM user_datasets WHERE name=? AND userid=?', (name,userid)).fetchall()
+			if len(res) > 0:
+				locations.append(res[0][0])
 	return locations
 
 def get_annotation_dataset_description(cursor, name):
@@ -223,10 +239,34 @@ def get_annotation_dataset_description(cursor, name):
 	else:
 		return {'ERROR'}
 
-def get_user_dataset_locations(cursor, names):
+def get_chromosomes(cursor):
+	return [X[0] for X in cursor.execute('SELECT name FROM chromosomes').fetchall()]
+
+def insert_chromosome(cursor, name):
+	cursor.execute('INSERT INTO chromosomes (name) VALUES (?)', (name, ))
+
+def run(cmd):
+	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	ret = p.wait()
+	out, err = p.communicate()
+	if ret != 0:
+		sys.stdout.write("Failed in running %s\n" % (cmd))
+		sys.stdout.write("OUTPUT:\n%s\n" % (out))
+		sys.stdout.write("ERROR:\n%s\n" % (out))
+		raise BaseException
+	return out
+
+def add_annotation_dataset(cursor, location, name, description):
+	cursor.execute('INSERT INTO annotation_datasets (name,location,description) VALUES (?,?,?)', (name, location, description))
+	chromosomes = run('wiggletools write_bg - %s | cut -f1 | uniq' % (location)).split('\n')
+	old_chromosome = get_chromosomes(cursor)
+	for chromosome in filter(lambda X: X not in old_chromosome and len(X) > 0, chromosomes):
+		insert_chromosome(cursor, chromosome)
+
+def get_user_dataset_locations(cursor, names, userid):
 	locations = []
 	for name in names:
-		res = cursor.execute('SELECT location FROM user_datasets WHERE name=?', (name,)).fetchall()
+		res = cursor.execute('SELECT location FROM user_datasets WHERE name=? AND userid=?', (name,userid)).fetchall()
 		if len(res) > 0:
 			locations.append(res[0][0])
 		else:
@@ -247,24 +287,13 @@ def get_dataset_locations(cursor, params):
 		print 'Found:\n' + "\n".join(X[0] for X in res)
 	return sorted(X[0] for X in res)
 
-def get_locations(cursor, params):
+def get_locations(cursor, params, userid):
 	if 'annot_name' in params:
-		return get_annotation_dataset_locations(cursor, params['annot_name'])
+		return get_annotation_dataset_locations(cursor, params['annot_name'], userid)
 	elif 'user_name' in params:
 		return get_user_dataset_locations(cursor, params['user_name'])
 	else:
 		return get_dataset_locations(cursor, params)
-
-def run(cmd):
-	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	ret = p.wait()
-	out, err = p.communicate()
-	if ret != 0:
-		sys.stdout.write("Failed in running %s\n" % (cmd))
-		sys.stdout.write("OUTPUT:\n%s\n" % (out))
-		sys.stdout.write("ERROR:\n%s\n" % (out))
-		raise BaseException
-	return out
 
 ###########################################
 ## Search cache
@@ -310,28 +339,28 @@ def make_barchart(counts, total, labels, out, format='pdf'):
 	pyplot.xticks(ind+width/2., labels)
 	pyplot.savefig(out, format=format)
 
-def substitute_reference_locations(cursor, string):
+def substitute_reference_locations(cursor, string, userid):
 	items = string.split(" ")
 	index = 0
 	while index < len(items) and (items[index] == 'overlaps' or items[index] == 'noverlaps'):
 		if items[index + 1] == 'extend':
-			items[index + 3] = get_annotation_dataset_locations(cursor, [items[index + 3]])[0]
+			items[index + 3] = get_annotation_dataset_locations(cursor, [items[index + 3]], userid)[0]
 			index += 4
 		else:
-			items[index + 3] = get_annotation_dataset_locations(cursor, [items[index + 1]])[0]
+			items[index + 3] = get_annotation_dataset_locations(cursor, [items[index + 1]], userid)[0]
 			index += 2
 
 	return " ".join(items)
 
 def launch_quick_compute(conn, cursor, fun_merge, fun_A, data_A, fun_B, data_B, options, config):
-	cmd_A = " ".join([substitute_reference_locations(cursor, fun_A)] + data_A + [':'])
+	cmd_A = " ".join([substitute_reference_locations(cursor, fun_A, options.userid)] + data_A + [':'])
 
 	if data_B is not None:
 		merge_words = fun_merge.split(' ')
 
 		assert fun_merge is not None
 		if fun_B is not None:
-			cmd_B = " ".join([substitute_reference_locations(cursor, fun_B)] + data_B + [':'])
+			cmd_B = " ".join([substitute_reference_locations(cursor, fun_B, options.userid)] + data_B + [':'])
 		else:
 			cmd_B = " ".join(data_B)
 
@@ -378,17 +407,17 @@ def make_normalised_form(fun_merge, fun_A, data_A, fun_B, data_B):
 
 def request_compute(conn, cursor, options, config):
 	fun_A = options.wa 
-	data_A = get_locations(cursor, options.a)
+	data_A = get_locations(cursor, options.a, options.userid)
 	options.countA = len(data_A)
-	if len(data_A) ==  0:
+	if len(data_A) == 0:
 		 return {'status':'INVALID'}
 	cmd_A = " ".join([fun_A] + data_A)
 
 	if options.b is not None:
 		fun_B = options.wb
-		data_B = get_locations(cursor, options.b)
+		data_B = get_locations(cursor, options.b, options.userid)
 		options.countB = len(data_B)
-		if len(data_B) ==  0:
+		if len(data_B) == 0:
 			 return {'status':'INVALID'}
 	else:
 		data_B = None
@@ -415,60 +444,91 @@ def request_compute(conn, cursor, options, config):
 ## Upload file
 ###########################################
 
+def fetch_user_datasets(cursor, userid):
+	return cursor.execute('SELECT * FROM user_datasets WHERE userid=?', (userid,)).fetchall()
+
+def get_user_datasets(cursor, userid):
+	return {'files': [X[0] for X in cursor.execute('SELECT name FROM user_datasets WHERE userid=?', (userid,)).fetchall()]}
+
 def wget_dataset(url, dir):
-	fh, destination = tempfile.mkstemp(suffix=url.split('.')[-1],dir=dir)
-	run("wget %s -O %s" % (url, destination))
+	fh, destination = tempfile.mkstemp(suffix="." + url.split('.')[-1],dir=dir)
+	run("cp %s %s" % (url, destination))
 	return destination
 
-def check_file_integrity(file):
+def check_file_integrity(file, cursor):
 	suffix = file.split('.')[-1]
 	if suffix == 'bed' or suffix == 'txt':
 		try:
+			chromosomes = get_chromosomes(cursor)
+			bad_assembly = True
+			found_chromosomes = set()
 			elems = []
-			for line in open(file):
-				items = line.split('\t')
-				elems.append(items[0], int(items[1]), int(items[2]))
+			fh = open(file, "r")
+			for line in fh:
+				if len(line.strip()) == 0 or line[0] == '#' or line[0] == '-':
+					continue
+				items = line.strip().split('\t')
+				if len(items) < 3:
+					return {'status':'MALFORMED_INPUT', 'format':'BED', 'line': line}
+				if items[0] in chromosomes:
+					bad_assembly = False
+				found_chromosomes.add(items[0])
+				elems.append((items[0], int(items[1]), int(items[2])))
+			fh.close()
+			if bad_assembly:
+				return {'status':'WRONG_ASSEMBLY', 'found_chromosomes':list(found_chromosomes), 'expected_chromosomes': chromosomes}
 			fh = open(file, "w")
 			for elem in sorted(elems):
-				fh.write("\t".join(elems) + "\n")
+				fh.write("\t".join(map(str, elem)) + "\n")
 			fh.close()
+			return
 		except:
-			return {'status':'MALFORMED_INPUT', 'format':'flatfile'}
+			return {'status':'MALFORMED_INPUT', 'format':'BEDX'}
 	elif suffix == 'bb':
 		try:
 			run("bigBedInfo %s" % (file))
 		except:
 			return {'status':'MALFORMED_INPUT', 'format':'bigBed'}
 		
-	return None
+	return {'status':'MALFORMED_INPUT','format':'unrecognized'}
 
-def register_user_dataset(cursor, file, description): 
-	cursor.execute('INSERT INTO user_datasets VALUES ("%s","%s")' % (file, description))
+def register_user_dataset(cursor, file, description, userid): 
+	cursor.execute('INSERT INTO user_datasets (name,location,userid) VALUES ("%s","%s","%s")' % (description, file, userid))
 
-def upload_dataset(cursor, dir, url, description):
+def name_already_used(cursor, description, userid):
+	return len(get_user_dataset_locations(cursor, [description], userid)) > 0 or len(get_annotation_dataset_locations(cursor, [description])) > 0
+
+def upload_dataset(cursor, dir, url, description, userid):
+	if name_already_used(cursor, description, userid):
+		return {'status':'NAME_USED','name':description}
+
 	try:
 		file = wget_dataset(url, dir);
 		if file is None:
 			raise
-		ret = check_file_integrity(file)
+		ret = check_file_integrity(file, cursor)
 		if ret is not None:
 			return ret
-		register_user_dataset(cursor, file, description)
-		return {'status':'UPLOADED'}
+		register_user_dataset(cursor, file, description, userid)
+		return {'status':'UPLOADED','name':description}
 	except:
 		raise
 		return {'status':'UPLOAD_FAILED','url':url}
 
-def save_dataset(cursor, dir, fileitem, description):
+def save_dataset(cursor, dir, fileitem, description, userid):
+	if name_already_used(cursor, description, userid):
+		return {'status':'NAME_USED','name':description}
+
 	try:
 		fh, destination = tempfile.mkstemp(suffix=".bed",dir=dir)
 		file = open(destination, "w")
 		file.write(fileitem.file.read())
-		ret = check_file_integrity(file)
+		file.close()
+		ret = check_file_integrity(destination, cursor)
 		if ret is not None:
 			return ret
-		register_user_dataset(cursor, file, description)
-		return {'status':'UPLOADED'}
+		register_user_dataset(cursor, destination, description, userid)
+		return {'status':'UPLOADED','name':description}
 	except:
 		raise
 		return {'status':'UPLOAD_FAILED','url':url}
@@ -488,7 +548,7 @@ def main():
 		for line in open(options.load_annots):
 			items = line.strip().split('\t')
 			assert len(items) == 3
-			cursor.execute('INSERT INTO annotation_datasets VALUES (?,?,?)',  items)
+			add_annotation_dataset(cursor, items[0], items[1], items[2])
 	elif options.clean is not None:
 		clean_database(cursor, options.clean)
 	elif options.cache:
@@ -498,6 +558,8 @@ def main():
 		if len(options.clear_cache) == 0:
 			cursor.execute('DROP TABLE cache')
 			create_cache(cursor)
+			cursor.execute('DROP TABLE user_datasets')
+			create_user_dataset_table(cursor)
 		else:
 			remove_jobs(cursor, options.clear_cache)
 	elif options.attributes:
@@ -507,7 +569,13 @@ def main():
 	elif options.annotations:
 		print "\n".join("\t".join(map(str, X)) for X in get_annotations(cursor))
 	elif options.upload is not None:
-		print json.dumps(upload_dataset(cursor, options.working_directory, options.upload, options.description))
+		print json.dumps(upload_dataset(cursor, options.working_directory, options.upload, options.description, options.userid))
+	elif options.user_datasets is not None:
+		if len(options.user_datasets) == 0:
+			print "\n".join("\t".join(map(str, X)) for X in cursor.execute("SELECT * FROM user_datasets").fetchall())
+		else:
+			for user in options.user_datasets:
+				print json.dumps(fetch_user_datasets(cursor, user))
 	else:
 		if options.a is not None:
 			res = dict()
