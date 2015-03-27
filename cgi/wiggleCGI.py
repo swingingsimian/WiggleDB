@@ -111,7 +111,10 @@ def main():
 		conn.commit()
 		conn.close()
 	except:
-		print json.dumps({'status':"ERROR"})
+		print ">>>>>>>>>>>>>>>>>>>>>>>>"
+		print form
+		print form.keys()
+		print json.dumps("ERROR")
 		raise
 
 if __name__ == "__main__":
