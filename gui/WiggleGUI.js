@@ -50,8 +50,6 @@ var comparison_opts = {"Intersection":"unit mult", "Union":"unit sum", "Differen
 
 var annotation_opts = {"Intersection":"unit mult", "Union":"unit sum", "Difference": "unit diff", "Overlap frequency": "overlaps"};
 
-var selection_opts = {"That overlap":"overlaps", "That don't overlap":"noverlaps", "That are within": "overlaps extend", "That a farther than": "noverlaps extend"};
-
 //////////////////////////////////////////
 // Creating multiselects 
 //////////////////////////////////////////
@@ -171,7 +169,7 @@ function create_filter_div(panel) {
 
   $("<input>").attr('type','text').attr('id','distance').attr('style','width: 50%;').attr('value','0').change(update_my_tab).prependTo(col2);
 
-  var object = $("<select>").addClass("form-control").attr('id','reference').appendTo(col3);
+  var object = $("<select>").addClass("form-control").addClass('filter_reference').attr('id','reference').appendTo(col3);
   if (annotations != null) {
     annotations.map(function(attribute) {add_attribute_to_select(attribute, object);});
   }
@@ -202,8 +200,21 @@ function add_personal_annotation(annotation) {
   $("<td>").appendTo(row);
 }
 
+function add_personal_filters(annotation) {
+  $(".filter_reference").each(
+    function (index, element) {
+      add_attribute_to_select(annotation, element);
+    }
+  );
+}
+
+function insert_personal_annotation(annotation) {
+  add_personal_annotation(annotation);
+  add_personal_filters(annotation);
+}
+
 function insert_personal_annotations(data) {
-  data['files'].map(add_personal_annotation);
+  data['files'].map(insert_personal_annotation);
 }
 
 function add_personal_annotations() {
@@ -416,7 +427,7 @@ function upload_url() {
 function report_upload(data) {
   reset_buttons();
   if (data["status"] == "UPLOADED") {
-      add_personal_annotation(data['name'])
+      insert_personal_annotation(data['name'])
       var modal = $('#Success_upload_modal').clone();
       modal.modal();
   } else if (data['status'] == 'NAME_USED') {
