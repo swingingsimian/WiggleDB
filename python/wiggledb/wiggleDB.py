@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python 
 # Copyright 2013 EMBL-EBI
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -330,10 +329,10 @@ def copy_to_longterm(data, config):
 		run("aws s3 cp %s s3://%s/%s --acl public-read" % (data, config['s3_bucket'], os.path.basename(data)))
 
 def make_barchart(counts, total, labels, out, format='pdf'):
-	ind = numpy.arange(len(labels))    # the x locations for the groups
-	width = 0.35       # the width of the bars: can also be len(x) sequence
+	ind = numpy.arange(len(labels)) # the x locations for the groups
+	width = 0.35 # the width of the bars: can also be len(x) sequence
 	heights = [X/float(total) for X in counts]
-	assert all(X <= 1 and X >= 0 for X in heights)
+	assert all(X <= 1 and X >= 0 for X in heights), (counts, total, heights)
 	errors = [ math.sqrt(2*X*(1-X) / total) for X in heights ]
 	pyplot.bar(ind, heights, width, yerr=errors)
 	pyplot.xticks(ind+width/2., labels)
@@ -372,6 +371,7 @@ def launch_quick_compute(conn, cursor, fun_merge, fun_A, data_A, fun_B, data_B, 
 				counts = []
 				for annotation in data_B:
 					counts.append(int(run('wiggletools write_bg - overlaps %s %s | wc -l' % (annotation, cmd_A)).strip()))
+				assert counts[-1] <= total, 'wiggletools write_bg - overlaps %s %s | wc -l' % (annotation, cmd_A)
 				out = open(destination, "w")
 				for name, count in zip(options.b['annot_name'], counts):
 					out.write("\t".join(map(str, [name, count])) + "\n")

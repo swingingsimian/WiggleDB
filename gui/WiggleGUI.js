@@ -169,7 +169,7 @@ function create_filter_div(panel) {
   $("<option>").attr("value","noverlaps").text("are farther than").attr("selected","selected").appendTo(verb);
   $("<option>").attr("value",null).text("(No filter)").attr("selected","selected").appendTo(verb);
 
-  $("<input>").attr('type','text').attr('id','distance').attr('style','width: 50%;').change(update_my_tab).prependTo(col2);
+  $("<input>").attr('type','text').attr('id','distance').attr('style','width: 50%;').attr('value','0').change(update_my_tab).prependTo(col2);
 
   var object = $("<select>").addClass("form-control").attr('id','reference').appendTo(col3);
   if (annotations != null) {
@@ -335,6 +335,15 @@ function define_buttons() {
   $('#annotation_button').click(annotation);
   $('#upload_button').click(upload_url);
   $('#upload_file_button').click(upload_file);
+  reset_buttons();
+}
+
+function reset_buttons() {
+  $('#summary_button').button('reset');
+  $('#comparison_button').button('reset');
+  $('#annotation_button').button('reset');
+  $('#upload_button').button('reset');
+  $('#upload_file_button').button('reset');
 }
 
 function update_my_panel() {
@@ -369,6 +378,7 @@ function report_result(data) {
   } else if (data["status"] == "ERROR") {
     $('#Failure_modal').modal();	
   }
+  reset_buttons();
 }
 
 // Get result
@@ -439,11 +449,13 @@ function submit_query(query) {
 // Request summary
 function summary() {
   var panel = $('#choose');
+  $(this).button('loading');
   submit_query(panel_query(panel) + '&wa=' + panel_reduction(panel)); 
 }
 
 // Request comparison
 function comparison() {
+  $(this).button('loading');
   var comparison = $('#comparison').val();
   var panelA = $('#chooseA');
   var panelB = $('#chooseB');

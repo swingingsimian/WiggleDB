@@ -28,9 +28,9 @@
         <h3 class="text-muted">GenomeStats</h3>
         <ul class="nav nav-justified" id="myTab">
           <li class="active"><a href="#summarise" data-toggle="tab">Summarise</a></li>
-          <li><a href="#compare" data-toggle="tab">Compare</a></li>
-          <li><a href="#annotate" data-toggle="tab">Annotate</a></li>
-          <li><a href="#upload" data-toggle="tab">Upload</a></li>
+          <li><a href="#compare" data-toggle="tab">Comparison</a></li>
+          <li><a href="#annotate" data-toggle="tab">Annotation</a></li>
+          <li><a href="#upload" data-toggle="tab">My Annotations</a></li>
           <li><a href="#about" data-toggle="tab">About</a></li>
         </ul>
 
@@ -58,7 +58,7 @@
                     <br>
                     <div class="panel-heading">
                       <h4 class='panel-title'>
-                        <a data-toggle="collapse" data-target="#filters" href="#filters" class='collapsed'>
+                        <a data-toggle="collapse" data-target="#filters" class='collapsed'>
                           Optional filters
                         </a>
                       </h4>
@@ -75,7 +75,7 @@
                 <td>
                   <br>
                   <div style="border:2px solid gray;border-radius:5px;padding:10px">
-                    <button type='button' class="btn btn-primary" id='summary_button' type="submit">Submit</button>
+                    <button type='button' class="btn btn-primary" id='summary_button' type="submit" data-loading-text="Computing...">Submit</button>
                   </div>
                 </td>
               </tr>
@@ -110,7 +110,7 @@
                           <br>
                           <div class="panel-heading">
                             <h4 class='panel-title'>
-                              <a data-toggle="collapse" data-target="#filters2" href="#filters2" class='collapsed'>
+                              <a data-toggle="collapse" data-target="#filters2" class='collapsed'>
                                 Optional filters
                               </a>
                             </h4>
@@ -148,7 +148,7 @@
                           <br>
                           <div class="panel-heading">
                             <h4 class='panel-title'>
-                              <a data-toggle="collapse" data-target="#filters3" href="#filters3" class='collapsed'>
+                              <a data-toggle="collapse" data-target="#filters3" class='collapsed'>
                                 Optional filters
                               </a>
                             </h4>
@@ -181,7 +181,7 @@
                 <td colspan="2">
                   <br>
                   <div style="border:2px solid gray;border-radius:5px;padding:10px">
-                    <button type='button' class="btn btn-primary" id="comparison_button" type="submit">Submit</button>
+                    <button type='button' class="btn btn-primary" id="comparison_button" type="submit" data-loading-text="Computing...">Submit</button>
                   </div>
                 </td>
               </tr>
@@ -216,7 +216,7 @@
                           <br>
                           <div class="panel-heading">
                             <h4 class='panel-title'>
-                              <a data-toggle="collapse" data-target="#filters4" href="#filters4" class='collapsed'>
+                              <a data-toggle="collapse" data-target="#filters4" class='collapsed'>
                                 Optional filters
                               </a>
                             </h4>
@@ -265,7 +265,7 @@
                 <td colspan="2">
                   <br>
                   <div style="border:2px solid gray;border-radius:5px;padding:10px">
-                    <button type="button" class="btn btn-primary" id="annotation_button" type="submit">Submit</button>
+                    <button type="button" class="btn btn-primary" id="annotation_button" type="submit" data-loading-text="Computing...">Submit</button>
                   </div>
                 </td>
               </tr>
@@ -518,7 +518,7 @@
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-              <h4 class="modal-title" id="myModalLabel">It's off!</h4>
+              <h4 class="modal-title" id="myModalLabel">Success</h4>
             </div>
             <div class="modal-body">
               Your data has been successfully uploaded.
@@ -536,7 +536,7 @@
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-              <h4 class="modal-title" id="myModalLabel">It's off!</h4>
+              <h4 class="modal-title" id="myModalLabel">Failure</h4>
             </div>
             <div class="modal-body">
               I encountered an error uploading file <a id="url"></a>. 
@@ -599,7 +599,7 @@
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-              <h4 class="modal-title" id="myModalLabel">It's off!</h4>
+              <h4 class="modal-title" id="myModalLabel">Failure</h4>
             </div>
             <div class="modal-body">
               I could not upload file <a id="url"></a>. 
