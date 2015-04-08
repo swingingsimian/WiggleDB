@@ -27,6 +27,7 @@ import wigglePlots
 import numpy
 import matplotlib
 import matplotlib.pyplot as pyplot
+import matplotlib.patches as mpatches
 
 verbose = False
 
@@ -150,7 +151,8 @@ def create_annotation_dataset_table(cursor):
 			(
 			name varchar(1000) UNIQUE,
 			location varchar(1000),
- 			description varchar(100)
+ 			description varchar(100),
+			count integer
 			)
 		 '''
 	cursor.execute(header)
@@ -162,7 +164,8 @@ def create_user_dataset_table(cursor):
 			(
  			name varchar(100),
 			location varchar(1000),
-			userid varchar(100)
+			userid varchar(100),
+			count integer
 			)
 		 '''
 	cursor.execute(header)
@@ -241,9 +244,6 @@ def get_annotation_dataset_description(cursor, name):
 def get_chromosomes(cursor):
 	return [X[0] for X in cursor.execute('SELECT name FROM chromosomes').fetchall()]
 
-def insert_chromosome(cursor, name):
-	cursor.execute('INSERT INTO chromosomes (name) VALUES (?)', (name, ))
-
 def run(cmd):
 	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	ret = p.wait()
@@ -255,12 +255,23 @@ def run(cmd):
 		raise BaseException
 	return out
 
+def count_regions(location):
+	if location[-4:] == '.bed' or location[-4:] == '.txt':
+		return int(run('cat %s | wc -l' % location).strip())
+	elif location[-3:] == '.bb':
+		return int(run('bigBedToBed %s stdout | grep -v ^# | wc -l' % (location)).strip())
+	else:
+		raise BaseException
+
+def register_new_chromosomes(cursor, location):
+	old_chromosomes = get_chromosomes(cursor)
+	for chromosome in run('wiggletools write_bg - %s | cut -f1 | uniq' % (location)).split('\n'):
+		if chromosome not in old_chromosomes and len(chromosome) > 0:
+			cursor.execute('INSERT INTO chromosomes (name) VALUES (?)', (chromosome, ))
+
 def add_annotation_dataset(cursor, location, name, description):
-	cursor.execute('INSERT INTO annotation_datasets (name,location,description) VALUES (?,?,?)', (name, location, description))
-	chromosomes = run('wiggletools write_bg - %s | cut -f1 | uniq' % (location)).split('\n')
-	old_chromosome = get_chromosomes(cursor)
-	for chromosome in filter(lambda X: X not in old_chromosome and len(X) > 0, chromosomes):
-		insert_chromosome(cursor, chromosome)
+	cursor.execute('INSERT INTO annotation_datasets (name,location,description, count) VALUES (?,?,?,?)', (name, location, description, count_regions(location)))
+	register_new_chromosomes(cursor, location)
 
 def get_user_dataset_locations(cursor, names, userid):
 	locations = []
@@ -328,14 +339,32 @@ def copy_to_longterm(data, config):
 		os.environ['AWS_CONFIG_FILE'] = config['aws_config']
 		run("aws s3 cp %s s3://%s/%s --acl public-read" % (data, config['s3_bucket'], os.path.basename(data)))
 
-def make_barchart(counts, total, labels, out, format='pdf'):
-	ind = numpy.arange(len(labels)) # the x locations for the groups
-	width = 0.35 # the width of the bars: can also be len(x) sequence
+def get_annotation_counts(cursor, userid):
+	counts = [(X[0], X[1]) for X in cursor.execute('SELECT name, count FROM annotation_datasets').fetchall()]
+	if userid is not None:
+		counts += [(X[0], X[1]) for X in cursor.execute('SELECT name, count FROM user_datasets WHERE userid=?', (userid,)).fetchall()]
+	return dict(counts)
+
+def make_barchart(counts, total, totals, labels, out, format='pdf'):
+	width = 0.35
+
+	ind = numpy.arange(len(labels)) - width/2 
 	heights = [X/float(total) for X in counts]
 	assert all(X <= 1 and X >= 0 for X in heights), (counts, total, heights)
 	errors = [ math.sqrt(2*X*(1-X) / total) for X in heights ]
-	pyplot.bar(ind, heights, width, yerr=errors)
-	pyplot.xticks(ind+width/2., labels)
+	pyplot.bar(ind, heights, width, yerr=errors, color='b')
+
+	ind = numpy.arange(len(labels)) + width/2 
+	heights = [X/float(Y) for X, Y in zip(counts, totals)]
+	assert all(X <= 1 and X >= 0 for X in heights), (counts, total, heights)
+	errors = [ math.sqrt(2*X*(1-X) / Y) for X, Y in zip(heights, totals) ]
+	pyplot.bar(ind, heights, width, yerr=errors, color='r')
+
+	blue_patch = mpatches.Patch(color='blue', label='Specificity')
+	red_patch = mpatches.Patch(color='red', label='Sensitivity')
+	pyplot.legend((blue_patch, red_patch), ('Specificity', 'Sensitivity'))
+
+	pyplot.xticks(ind, labels)
 	pyplot.savefig(out, format=format)
 
 def substitute_reference_locations(cursor, string, userid):
@@ -372,12 +401,19 @@ def launch_quick_compute(conn, cursor, fun_merge, fun_A, data_A, fun_B, data_B, 
 				for annotation in data_B:
 					counts.append(int(run('wiggletools write_bg - overlaps %s %s | wc -l' % (annotation, cmd_A)).strip()))
 				assert counts[-1] <= total, 'wiggletools write_bg - overlaps %s %s | wc -l' % (annotation, cmd_A)
+
+				annotation_count_dict = get_annotation_counts(cursor, options.userid)
+				annotation_counts = []
+				for annotation in options.b['annot_name']:
+					annotation_counts.append(annotation_count_dict[annotation])
+
 				out = open(destination, "w")
-				for name, count in zip(options.b['annot_name'], counts):
-					out.write("\t".join(map(str, [name, count])) + "\n")
+				for name, count, annotation_count in zip(options.b['annot_name'], counts, annotation_counts):
+					out.write("\t".join(map(str, [name, count, annotation_count])) + "\n")
 				out.write("\t".join(['ALL', str(total)]) + "\n")
 				out.close()
-				make_barchart(counts, total, options.b['annot_name'], destination + '.png', format='png')
+
+				make_barchart(counts, total, annotation_counts, options.b['annot_name'], destination + '.png', format='png')
 		else:
 			fh, destination = tempfile.mkstemp(suffix='.bed',dir=options.working_directory)
 			run(" ".join(['wiggletools','write', destination, fun_merge, cmd_A, cmd_B]))
@@ -470,7 +506,7 @@ def check_file_integrity(file, cursor):
 					continue
 				items = line.strip().split('\t')
 				if len(items) < 3:
-					return {'status':'MALFORMED_INPUT', 'format':'BED', 'line': line}
+					return {'status':'MALFORMED_INPUT', 'format':'Bed', 'line': line}
 				if items[0] in chromosomes:
 					bad_assembly = False
 				found_chromosomes.add(items[0])
@@ -484,7 +520,7 @@ def check_file_integrity(file, cursor):
 			fh.close()
 			return
 		except:
-			return {'status':'MALFORMED_INPUT', 'format':'BEDX'}
+			return {'status':'MALFORMED_INPUT', 'format':'Bed'}
 	elif suffix == 'bb':
 		try:
 			run("bigBedInfo %s" % (file))
@@ -494,7 +530,7 @@ def check_file_integrity(file, cursor):
 	return {'status':'MALFORMED_INPUT','format':'unrecognized'}
 
 def register_user_dataset(cursor, file, description, userid): 
-	cursor.execute('INSERT INTO user_datasets (name,location,userid) VALUES ("%s","%s","%s")' % (description, file, userid))
+	cursor.execute('INSERT INTO user_datasets (name,location,userid,count) VALUES (?,?,?,?)', (description, file, userid, count_regions(file)))
 
 def name_already_used(cursor, description, userid):
 	return len(get_user_dataset_locations(cursor, [description], userid)) > 0 or len(get_annotation_dataset_locations(cursor, [description])) > 0
