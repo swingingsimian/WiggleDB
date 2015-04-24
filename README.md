@@ -11,7 +11,7 @@ git clone https://github.com/Ensembl/WiggleTools.git
 cd WiggleTools
 sudo sh ./easy_install.sh
 chmod 755 bin/* python/wiggletools/*
-cp -r python/wiggletools/ /usr/local/lib/python-2.7/dist-packages
+cp -r python/wiggletools/ /usr/local/lib/python2.7/dist-packages
 cd ..
 ```
 Install WiggleDB
@@ -21,7 +21,7 @@ Install WiggleDB
 git clone https://github.com/Ensembl/WiggleDB.git
 cd WiggleDB
 chmod 755 python/wiggleDB/* cgi/*
-cp -r python/wiggletools/ /usr/local/lib/python-2.7/dist-packages
+cp -r python/wiggletools/ /usr/local/lib/python2.7/dist-packages
 ```
 
 Prepare the data
