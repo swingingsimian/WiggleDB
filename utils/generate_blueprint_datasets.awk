@@ -1,30 +1,13 @@
 #!/usr/bin/env awk
 
-
-# First 5 fields need to be:
-# location    name    type    annotation  assembly
-# Followed by whatever appropriate filter variables
-
-# Name should be unique?
-# 
-
-# Need SAMPLE_NAME in here to make it uniq? (as per EpiExplorer code)
-# Ass SAMPLE_ID to filters
-# 7/8 SAMPLE_ID/NAME
-# 23/24 CELL_LINE/TYPE
-# 14 is EXPERIMENT_TYPE (i.e. FeatureType)
-# 43 is FILE
-
-# Do we still need the headers in here? For integration into the interface?
-# 
-
-
 BEGIN {
   FS="\t"
   OFS="\t"
+  # Validate work_dir or just allow to download in current dir?
+  source_root="ftp.ebi.ac.uk/pub/databases/"
 } 
 {
-  if(NR==1){  # Print heder line and set named indeces for readability
+  if(NR==1){  # Print header line and set named indeces for readability
     EXPERIMENT_ID=1
     STUDY_ID=2
     #STUDY_NAME=3
@@ -38,11 +21,29 @@ BEGIN {
     TISSUE_TYPE=30
     TREATMENT=35
     FILE=43
+
+    # First 5 fields need to be:
+    # location    name    type    annotation  assembly
+    # Followed by whatever appropriate filter variables
     print "location", "name", "type", "annotation", "assembly", $EXPERIMENT_ID, \
      $STUDY_ID, $SAMPLE_ID, $SAMPLE_NAME, $LIBRARY_STRATEGY, \
      $EXPERIMENT_TYPE, $DISEASE, $CELL_TYPE, $CELL_LINE, $TISSUE_TYPE, $TREATMENT 
   }
-  else if($FILE ~ /\.bed\.gz$/){   
+  else if($FILE ~ /\.bb$/){  #/\.bed\.gz$/){
+    # 611 bed.gz files
+    # 581 .bb files
+    local_file=work_dir""$FILE
+
+    if(download != ""){
+      # Test for failure here
+      system("wget -x -nH --cut-dirs=2 -P "work_dir" "source_root""$FILE)
+      #system("gunzip "local_file)
+      #CHECKSUMS?!
+    }
+
+    # remove .gz
+    #local_file=gensub(/\.gz$/, "", "g", local_file) 
+
     if($CELL_LINE == "-"){
       $CELL_LINE=""
       name=$CELL_TYPE
@@ -51,7 +52,7 @@ BEGIN {
       $CELL_TYPE=""
     }
     name=$EXPERIMENT_TYPE" "name"("$SAMPLE_NAME")"
-    print $FILE, name, "regions", "FALSE", "GRCh38", $EXPERIMENT_ID, \
+    print local_file, name, "regions", "FALSE", "GRCh38", $EXPERIMENT_ID, \
      $STUDY_ID, $SAMPLE_ID, $SAMPLE_NAME, $LIBRARY_STRATEGY, \
      $EXPERIMENT_TYPE, $DISEASE, $CELL_TYPE, $CELL_LINE, $TISSUE_TYPE, $TREATMENT 
   }
